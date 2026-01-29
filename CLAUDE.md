@@ -30,6 +30,13 @@ The system orchestrates **21 specialized AI agents** organized into **5 division
 - **Styling**: Tailwind CSS 3.4
 - **Icons**: Lucide React
 
+### Browser Environment Constraints
+The frontend runs in a web browser, not a native terminal. This affects keyboard shortcuts:
+- **F1-F12 keys are reserved** by browsers and cannot be used for app shortcuts
+- Use **Alt+Number** (Alt+1 through Alt+8) for panel navigation instead
+- Avoid Ctrl+W, Ctrl+T, Ctrl+N, and other browser-reserved shortcuts
+- Test keyboard interactions in multiple browsers (Chrome, Firefox, Safari)
+
 ## Directory Structure
 
 ```
@@ -322,6 +329,21 @@ The `docker-compose.yml` defines:
 - `celery_worker` - Background task processor
 - `celery_beat` - Scheduled task scheduler
 
+## Keyboard Shortcuts (Browser-Safe)
+
+The FunctionKeyBar uses Alt+Number shortcuts (not F-keys, which browsers reserve):
+
+| Shortcut | Panel       |
+|----------|-------------|
+| Alt+1    | Help        |
+| Alt+2    | Calendar    |
+| Alt+3    | Analytics   |
+| Alt+4    | Channels    |
+| Alt+5    | Inventory   |
+| Alt+6    | Budget      |
+| Alt+7    | Competitors |
+| Alt+8    | Settings    |
+
 ## Notes for AI Assistants
 
 1. **Always check existing patterns** - This codebase has consistent patterns; follow them when adding new code
@@ -331,3 +353,4 @@ The `docker-compose.yml` defines:
 5. **Cost optimization** - Consider which model tier is appropriate for new features
 6. **State management** - Always work through `PromotorStateDict` for LangGraph operations
 7. **Tool definitions** - Use LangChain's `@tool` decorator for agent tools
+8. **Browser constraints** - Avoid F-keys and browser-reserved shortcuts; use Alt+Number patterns
