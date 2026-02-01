@@ -1,0 +1,11 @@
+{
+  "name": "@promohub/config",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    "./eslint": "./eslint/index.js",
+    "./tsconfig/base": "./tsconfig/base.json",
+    "./tsconfig/nextjs": "./tsconfig/nextjs.json",
+    "./tsconfig/library": "./tsconfig/library.json"
+  }
+}

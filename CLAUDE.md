@@ -1,356 +1,516 @@
-# CLAUDE.md - Promotor AI Agent Guidelines
+# CLAUDE.md - PromoHub Development Guidelines
 
-This document provides essential context for AI assistants working on the Promotor codebase.
+This document provides essential context for AI assistants working on the PromoHub codebase.
 
 ## Project Overview
 
-Promotor is a **Bloomberg Terminal-style Beauty Brand Promotion Manager powered by AI Agents**. It's a multi-agent system designed for managing K-beauty (Korean beauty) brand promotions across multiple e-commerce channels (Oliveyoung, Coupang, Naver, Kakao).
+**PromoHub** is an all-in-one e-commerce platform for small-medium K-beauty/cosmetic companies. Starting with a **Promotion Calendar** as the core feature, it will scale to become a comprehensive e-commerce management platform.
 
-The system orchestrates **21 specialized AI agents** organized into **5 divisions** to handle strategic planning, market intelligence, channel management, analytics, and operations.
+**Target Users**: Brand managers and e-commerce teams at cosmetic companies who need to manage promotions across multiple Korean e-commerce channels.
+
+**Core Philosophy**: Start simple with calendar, scale to full platform.
+
+## Product Roadmap
+
+| Phase | Module | Features |
+|-------|--------|----------|
+| **Phase 1** | Promotion Calendar | Monthly/weekly/daily views, promo CRUD, team sharing, channel filters, templates, conflict detection |
+| **Phase 1** | Core Settings | Team management, channel setup, product/SKU management |
+| **Phase 2** | Strategy | Monthly strategy planning, competitor monitoring, P&L simulation |
+| **Phase 3** | Advanced | Price monitoring, channel expansion, marketing comms hub, AI agents |
+
+**Current Focus**: Phase 1 - Promotion Calendar
 
 ## Technology Stack
 
-### Backend (Python)
-- **Framework**: FastAPI 0.115+ with async support
-- **Agent Orchestration**: LangChain 0.3+ and LangGraph 0.2+ (graph-based multi-agent coordination)
-- **LLM Providers**: OpenAI (gpt-4o, gpt-4o-mini) and Anthropic Claude
-- **Database**: PostgreSQL 15 (via Supabase) with SQLAlchemy 2.0 + AsyncPG
-- **Cache/Queue**: Redis 7 for caching and Celery broker
-- **Vector Store**: Pinecone for semantic search embeddings
-- **Task Queue**: Celery 5.4+ with Redis
-- **Web Scraping**: Playwright with stealth mode, httpx, BeautifulSoup4
-- **ML/NLP**: PyTorch, Transformers, sentence-transformers, Prophet, scikit-learn
-
-### Frontend (Next.js/React)
-- **Framework**: Next.js 14.2.0 (App Router)
-- **UI Components**: Radix UI (Dialog, Dropdown, Tabs, Tooltip, Scroll)
-- **State Management**: Zustand 4.5
-- **Charts**: Recharts 2.12
-- **Real-time**: Socket.IO 4.7
-- **Styling**: Tailwind CSS 3.4
-- **Icons**: Lucide React
-
-### Browser Environment Constraints
-The frontend runs in a web browser, not a native terminal. This affects keyboard shortcuts:
-- **F1-F12 keys are reserved** by browsers and cannot be used for app shortcuts
-- Use **Alt+Number** (Alt+1 through Alt+8) for panel navigation instead
-- Avoid Ctrl+W, Ctrl+T, Ctrl+N, and other browser-reserved shortcuts
-- Test keyboard interactions in multiple browsers (Chrome, Firefox, Safari)
+| Layer | Technology | Reason |
+|-------|------------|--------|
+| **Monorepo** | Turborepo | Build cache, workspace management |
+| **Frontend** | Next.js 14 (App Router) | SSR + API Routes integrated |
+| **Styling** | Tailwind CSS | Rapid development |
+| **Database** | Supabase (PostgreSQL) | Auth + DB + Realtime + Storage |
+| **ORM** | Drizzle ORM | Type-safe, lightweight |
+| **Auth** | Supabase Auth | Social login, team invitations |
+| **Payments** | Toss Payments / Stripe | Korea = Toss, Global = Stripe |
+| **Deploy** | Vercel | Next.js native |
+| **Notifications** | Slack Webhook + Kakao Alimtalk | Korean business environment |
+| **Language** | TypeScript (full-stack) | Type safety |
 
 ## Directory Structure
 
 ```
-/home/user/promotor/
-├── backend/                              # Python FastAPI backend
-│   ├── agents/                           # Multi-agent system
-│   │   ├── base.py                       # BaseAgent & BaseDivisionSupervisor classes
-│   │   ├── chief_coordinator.py          # Main orchestrator agent
-│   │   ├── divisions/                    # 5 specialized divisions
-│   │   │   ├── strategic_planning/       # 3 agents: planner, timeline, budget
-│   │   │   ├── market_intelligence/      # 4 agents: news, competitor, ingredient, seasonal
-│   │   │   ├── channel_management/       # 5 agents: oliveyoung, coupang, naver, kakao, syncer
-│   │   │   ├── analytics/                # 7 agents: sentiment, review, bundle, margin, etc.
-│   │   │   └── operations/               # 3 agents: price, inventory, checklist
-│   │   └── tools/                        # Shared agent tools
-│   │       └── common_tools.py           # Utilities (currency, dates, caching, logging)
-│   ├── api/                              # FastAPI routes
-│   │   ├── main.py                       # App entry point (CORS, lifespan)
-│   │   ├── websocket.py                  # WebSocket handlers
-│   │   └── routes/                       # API route modules
-│   │       ├── chat.py                   # /api/chat endpoints
-│   │       ├── agents.py                 # /api/agents endpoints
-│   │       ├── dashboard.py              # /api/dashboard endpoints
-│   │       └── health.py                 # Health check
-│   ├── graph/                            # LangGraph orchestration
-│   │   ├── state.py                      # Central state (TypedDict)
-│   │   ├── routing.py                    # Task classification & routing
-│   │   └── main_graph.py                 # Graph construction & execution
-│   └── config.py                         # Environment configuration (Pydantic)
-├── frontend/                             # Next.js React frontend
-│   ├── src/
-│   │   ├── app/                          # Next.js App Router pages
-│   │   └── components/dashboard/         # Terminal-style UI components
-├── docker-compose.yml                    # Multi-container orchestration
-├── pyproject.toml                        # Python project config
-└── .env.example                          # Environment variables template
+promohub/
+├── apps/
+│   ├── web/                           # Main Next.js web app
+│   │   ├── src/
+│   │   │   ├── app/                   # App Router
+│   │   │   │   ├── (auth)/            # Login, signup
+│   │   │   │   ├── (dashboard)/       # Main dashboard
+│   │   │   │   │   ├── calendar/      # [Phase 1] Calendar views
+│   │   │   │   │   ├── promotions/    # [Phase 1] Promo CRUD
+│   │   │   │   │   ├── settings/      # Team, billing
+│   │   │   │   │   ├── strategy/      # [Phase 2]
+│   │   │   │   │   ├── competitors/   # [Phase 2]
+│   │   │   │   │   ├── pnl/           # [Phase 2]
+│   │   │   │   │   ├── channels/      # [Phase 3]
+│   │   │   │   │   ├── pricing/       # [Phase 3]
+│   │   │   │   │   └── comms/         # [Phase 3]
+│   │   │   │   └── api/               # API routes, webhooks
+│   │   │   ├── components/            # UI components
+│   │   │   │   ├── layout/            # Sidebar, Header, MobileNav
+│   │   │   │   ├── calendar/          # CalendarView, MonthView, WeekView, DayView
+│   │   │   │   ├── promotions/        # PromoForm, PromoList, PromoStatusBadge
+│   │   │   │   └── common/            # LoadingSpinner, EmptyState, ErrorBoundary
+│   │   │   ├── hooks/                 # Custom hooks
+│   │   │   └── lib/                   # Utilities, Supabase clients
+│   │   └── package.json
+│   └── landing/                       # Marketing site
+├── packages/
+│   ├── db/                            # Schema, migrations, queries
+│   │   ├── schema/                    # SQL schema files
+│   │   ├── migrations/                # Supabase migrations
+│   │   ├── seed/                      # Seed data (channels, demo)
+│   │   └── queries/                   # Reusable query functions
+│   ├── types/                         # Shared TypeScript types
+│   ├── ui/                            # Shared UI components
+│   ├── utils/                         # Shared utilities (date, currency, validation)
+│   └── config/                        # ESLint, TypeScript configs
+├── turbo.json
+├── package.json
+└── docker-compose.yml
+```
+
+## Core Domain Entities
+
+```
+Promotion
+├── id, title, description
+├── channel_id → Channel (Oliveyoung, Coupang, Naver, Kakao, Musinsa)
+├── team_id → Team
+├── product_ids → Product[] (N:M via promo_products)
+├── template_id → PromoTemplate (nullable)
+├── status: planned | active | ended | cancelled
+├── discount_type: percentage | bogo | coupon | gift | bundle
+├── discount_value
+├── start_date, end_date
+├── memo
+└── notifications
+
+Channel: Oliveyoung, Coupang, Naver, Kakao, Musinsa, etc.
+Product/SKU: Item management with SKU codes
+Team: Multi-user collaboration with roles
+PromoTemplate: Recurring promotion patterns (e.g., "Monthly Oliveyoung Sale")
 ```
 
 ## Development Commands
 
-### Backend Development
 ```bash
-# Install dependencies
-pip install -e ".[dev]"
+# Setup new project
+npx create-turbo@latest promohub
+cd promohub
+npx create-next-app apps/web --typescript --tailwind --app --src-dir
+npx supabase init
 
-# Run development server
-uvicorn backend.api.main:app --reload --host 0.0.0.0 --port 8000
+# Development
+npm run dev                    # All apps
+npm run dev --filter=web       # Web app only
 
-# Run Celery worker (background tasks)
-celery -A backend.tasks.celery_app worker --loglevel=info
+# Database
+npx supabase migration new <name>
+npx supabase db push
+npx supabase db reset          # Reset with migrations + seed
 
-# Run Celery beat (scheduled tasks)
-celery -A backend.tasks.celery_app beat --loglevel=info
-```
-
-### Frontend Development
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Build for production
+# Build & Deploy
 npm run build
-
-# Lint code
 npm run lint
+npm run typecheck
+
+# Testing
+npm run test
+npm run test:e2e
 ```
 
-### Docker Development
-```bash
-# Start all services
-docker-compose up -d
+## Git Conventions
 
-# View logs
-docker-compose logs -f backend
-
-# Rebuild specific service
-docker-compose up -d --build backend
+### Branches
+```
+main           ← Production (auto-deploy)
+└── develop    ← Integration
+     ├── feat/calendar-view
+     ├── feat/promo-crud
+     ├── fix/date-timezone
+     └── chore/setup-ci
 ```
 
-### Code Quality
-```bash
-# Python linting (Ruff)
-ruff check backend/
-ruff format backend/
+### Commits
+Format: `type(scope): message`
 
-# Python type checking (MyPy)
-mypy backend/
+Examples:
+- `feat(calendar): implement monthly view`
+- `fix(promo): timezone bug on end date`
+- `chore(db): add channel seed data`
+- `refactor(ui): extract DateRangePicker component`
 
-# Run tests
-pytest tests/
-```
+## Phase 1 Priority Features
 
-## Code Conventions
+Implementation priority for Phase 1:
 
-### Python Style
-- **Line length**: 100 characters
-- **Python version**: 3.11+
-- **Linting**: Ruff with rules E, F, I, N, W, UP (E501 ignored)
-- **Type checking**: MyPy strict mode enabled
-- **Imports**: Use `from __future__ import annotations` for forward references
-- **Async**: Prefer async functions for I/O operations
+1. **Calendar Component** - Month/week/day views with promotion cards
+2. **Promotion CRUD** - Create, edit, delete promotions with forms
+3. **Channel Filtering** - Filter calendar by sales channel
+4. **Team Sharing** - Multi-user access with role-based permissions
+5. **Template System** - Save and reuse recurring promotion patterns
+6. **Conflict Detection** - Alert when promotions overlap on same channel/product
 
-### Agent Implementation Pattern
-Every agent follows this structure:
-
-```python
-class SpecializedAgent(BaseAgent):
-    name = "agent_name"
-    role = "Agent Role Description"
-    description = "What this agent does"
-    division = Division.DIVISION_NAME
-
-    def __init__(self, llm: BaseChatModel, tools: Sequence[BaseTool] | None = None):
-        default_tools = [tool1, tool2, ...]
-        super().__init__(llm, default_tools + (tools or []))
-
-    @property
-    def system_prompt(self) -> str:
-        return """Detailed system prompt defining agent behavior..."""
-
-    async def process(
-        self,
-        state: PromotorStateDict,
-        messages: Sequence[BaseMessage] | None = None,
-    ) -> dict[str, Any]:
-        result = await super().process(state, messages)
-        return {..., "division": self.division.value}
-```
-
-### State Management (LangGraph)
-- Central state is defined in `backend/graph/state.py` as `PromotorStateDict`
-- Uses `add_messages` reducer for conversation history
-- State includes: messages, routing info, task classification, division results, error handling
-- Always use TypedDict for LangGraph compatibility
-
-### API Route Pattern
-```python
-from fastapi import APIRouter, HTTPException
-
-router = APIRouter()
-
-@router.post("/")
-async def endpoint_name(request: RequestModel) -> ResponseModel:
-    # Implementation
-    pass
-```
-
-## Key Architectural Patterns
-
-### Multi-Agent Hierarchy
-1. **Chief Coordinator** (top-level) - Analyzes requests, classifies tasks, routes to divisions
-2. **Division Supervisors** (5 total) - Coordinate agents within their division
-3. **Specialized Agents** (21 total) - Process specific task types
-
-### Task Classification & Routing
-- Keyword-based classification in `backend/graph/routing.py`
-- Routes to single or multiple divisions based on query patterns
-- Supports multi-division workflows for complex tasks
-
-### Cost Optimization (Model Tiers)
-```python
-Tier1_free: Database queries, API calls, cache retrieval (no LLM)
-Tier2_cheap: gpt-4o-mini or claude-3-haiku for routine tasks
-Tier3_full: gpt-4o or claude-3-5-sonnet for complex analysis
-```
-
-## API Endpoints
+## API Routes (Next.js App Router)
 
 ```
-POST   /api/chat/                    # Send message to agent system
-POST   /api/chat/stream              # Stream agent responses (SSE)
-GET    /api/chat/history/{conv_id}   # Get conversation history
-DELETE /api/chat/history/{conv_id}   # Clear conversation
+# Auth
+POST   /api/auth/[...nextauth]     # NextAuth.js handlers
 
-GET    /api/agents/                  # List all agents
-GET    /api/agents/{division}        # Get agents for division
-GET    /api/agents/{division}/{name} # Get specific agent details
+# Promotions
+GET    /api/promotions             # List promotions (with filters)
+POST   /api/promotions             # Create promotion
+GET    /api/promotions/[id]        # Get promotion detail
+PATCH  /api/promotions/[id]        # Update promotion
+DELETE /api/promotions/[id]        # Delete promotion
 
-GET    /api/dashboard/metrics        # Dashboard KPIs
-GET    /api/dashboard/channels       # Channel overview
-GET    /api/dashboard/alerts         # Active alerts
-GET    /api/dashboard/promotions     # Active/upcoming promotions
+# Calendar
+GET    /api/calendar               # Get promotions for date range
 
-GET    /health                       # Health check
+# Teams
+GET    /api/teams                  # List user's teams
+POST   /api/teams                  # Create team
+POST   /api/teams/[id]/invite      # Invite member
+
+# Channels & Products
+GET    /api/channels               # List channels
+GET    /api/products               # List products
+
+# Webhooks
+POST   /api/webhooks/stripe        # Stripe payment webhooks
+POST   /api/webhooks/slack         # Slack notifications
 ```
 
 ## Environment Variables
 
-Required environment variables (see `.env.example`):
-
 ```bash
-# LLM API Keys
-OPENAI_API_KEY=
-ANTHROPIC_API_KEY=
+# ============================================
+# PUBLIC (safe to expose in browser)
+# ============================================
+NEXT_PUBLIC_SUPABASE_URL=          # Supabase project URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=     # Anon key (RLS enforced)
+NEXT_PUBLIC_APP_URL=               # App domain for OAuth redirects
 
-# Database
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/promotor
-SUPABASE_URL=
-SUPABASE_KEY=
+# ============================================
+# SECRET (server-side only, NEVER expose)
+# ============================================
 
-# Redis
-REDIS_URL=redis://localhost:6379
+# Supabase Admin (DANGER: bypasses RLS - use sparingly)
+SUPABASE_SERVICE_ROLE_KEY=
 
-# Vector Store
-PINECONE_API_KEY=
-PINECONE_ENVIRONMENT=
+# Auth
+NEXTAUTH_SECRET=                   # Random 32+ char string
+NEXTAUTH_URL=
 
-# Channel APIs (optional)
+# Payments
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+TOSS_SECRET_KEY=
+TOSS_CLIENT_KEY=
+
+# Notifications
+SLACK_WEBHOOK_URL=
+KAKAO_ALIMTALK_KEY=
+KAKAO_ALIMTALK_SENDER=
+
+# External APIs (Phase 2+)
 COUPANG_ACCESS_KEY=
 COUPANG_SECRET_KEY=
 NAVER_CLIENT_ID=
 NAVER_CLIENT_SECRET=
-KAKAO_ADMIN_KEY=
 ```
 
-## Enums and Constants
+**Security Notes:**
+- `NEXT_PUBLIC_*` are exposed to browser - only use for truly public values
+- `SUPABASE_SERVICE_ROLE_KEY` bypasses ALL RLS - never use in API routes that handle user requests
+- Generate `NEXTAUTH_SECRET` with: `openssl rand -base64 32`
+- Use different values for development, staging, and production
+- Rotate secrets regularly, especially after team member departures
 
-### Divisions (`backend/graph/state.py`)
-- `STRATEGIC_PLANNING` - Promotion planning, timelines, budgets
-- `MARKET_INTELLIGENCE` - News, competitors, ingredients, seasonal trends
-- `CHANNEL_MANAGEMENT` - Oliveyoung, Coupang, Naver, Kakao operations
-- `ANALYTICS` - Sentiment, margins, bundles, attribution, predictions
-- `OPERATIONS` - Price monitoring, inventory, checklists
+## Code Conventions
 
-### Channels
-- `OLIVEYOUNG` - Korea's largest H&B retailer
-- `COUPANG` - Korea's largest e-commerce (Rocket delivery)
-- `NAVER` - Smart Store marketplace
-- `KAKAO` - Kakao shopping/gifts
+### TypeScript
+- Strict mode enabled
+- Use `type` for object shapes, `interface` for extendable contracts
+- Prefer named exports over default exports
+- Use Zod for runtime validation
 
-### Task Types (20+)
-See `backend/graph/state.py` for full TaskType enum including:
-- `PROMOTION_PLANNING`, `TIMELINE_MANAGEMENT`, `BUDGET_ALLOCATION`
-- `NEWS_SCOUTING`, `COMPETITOR_ANALYSIS`, `INGREDIENT_TRENDS`
-- `SENTIMENT_ANALYSIS`, `MARGIN_CALCULATION`, `STOCKOUT_PREDICTION`
-- And more...
+### Components
+```tsx
+// Prefer function components with explicit types
+export function PromoCard({ promotion }: { promotion: Promotion }) {
+  return <div>...</div>
+}
 
-## Korean Language Support
+// Use 'use client' directive only when needed
+'use client'
+```
 
-This codebase has extensive Korean language support:
-- Keyword matching includes Korean terms (e.g., "프로모션", "계획", "재고")
-- Currency formatting: Korean won (원, 만, 억)
-- Korean date/calendar events (Chuseok, Lunar New Year, etc.)
-- Korean NLP processing for sentiment analysis
+### Database (Supabase)
+- Use RLS (Row Level Security) for multi-tenant data isolation
+- All tables must have `team_id` for team scoping
+- Use `created_at` and `updated_at` timestamps
 
-## Common Tasks
+### File Naming
+- Components: `PascalCase.tsx` (e.g., `PromoCard.tsx`)
+- Hooks: `camelCase.ts` with `use` prefix (e.g., `usePromoCalendar.ts`)
+- Utils: `camelCase.ts` (e.g., `date.ts`, `currency.ts`)
 
-### Adding a New Agent
-1. Create agent file in appropriate division: `backend/agents/divisions/{division}/{agent_name}.py`
-2. Inherit from `BaseAgent` and implement required properties
-3. Define tools using `@tool` decorator
-4. Register agent with the division supervisor
-5. Update routing in `backend/graph/routing.py` if needed
+## Security (Multi-Tenant SaaS)
 
-### Adding a New API Endpoint
-1. Create route in `backend/api/routes/` or add to existing router
-2. Define Pydantic models for request/response
-3. Include router in `backend/api/main.py`
+PromoHub is a B2B SaaS platform serving multiple companies. **Data isolation and security are critical** - one company must NEVER access another company's data.
 
-### Modifying LangGraph Flow
-1. Update state in `backend/graph/state.py` if needed
-2. Modify routing logic in `backend/graph/routing.py`
-3. Update graph construction in `backend/graph/main_graph.py`
+### Multi-Tenant Data Isolation
 
-## Testing
+**Row Level Security (RLS) is MANDATORY for all tables:**
+
+```sql
+-- Example: promotions table RLS policy
+CREATE POLICY "Users can only access their team's promotions"
+ON promotions
+FOR ALL
+USING (
+  team_id IN (
+    SELECT team_id FROM team_members
+    WHERE user_id = auth.uid()
+  )
+);
+
+-- NEVER bypass RLS - always use anon/authenticated client
+-- Service role key should ONLY be used for admin operations
+```
+
+**Required RLS patterns:**
+- Every table with user data MUST have `team_id` column
+- Every query MUST be scoped by team membership
+- Use Supabase `auth.uid()` in RLS policies, never trust client-side user IDs
+
+### Authentication & Authorization
+
+```typescript
+// Always verify session server-side
+import { createServerClient } from '@supabase/ssr'
+
+export async function getServerSession() {
+  const supabase = createServerClient(/* config */)
+  const { data: { user }, error } = await supabase.auth.getUser()
+
+  if (error || !user) {
+    redirect('/login')
+  }
+  return user
+}
+
+// Role-based access control
+type Role = 'owner' | 'admin' | 'member' | 'viewer'
+
+// Check permissions before sensitive operations
+async function canEditPromotion(userId: string, promoId: string): Promise<boolean> {
+  // Verify user belongs to the team AND has edit permissions
+}
+```
+
+### API Security
+
+```typescript
+// All API routes must:
+// 1. Verify authentication
+// 2. Validate input with Zod
+// 3. Check authorization (team membership + role)
+// 4. Use parameterized queries (never string interpolation)
+
+export async function POST(request: Request) {
+  // 1. Auth check
+  const session = await getServerSession()
+  if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // 2. Input validation
+  const body = await request.json()
+  const parsed = createPromotionSchema.safeParse(body)
+  if (!parsed.success) {
+    return Response.json({ error: 'Invalid input' }, { status: 400 })
+  }
+
+  // 3. Authorization check
+  const isMember = await isTeamMember(session.user.id, parsed.data.team_id)
+  if (!isMember) return Response.json({ error: 'Forbidden' }, { status: 403 })
+
+  // 4. Safe database operation (RLS will also enforce)
+  const result = await supabase.from('promotions').insert(parsed.data)
+}
+```
+
+### Input Validation & Sanitization
+
+```typescript
+// Use Zod schemas for ALL user inputs
+import { z } from 'zod'
+
+const promotionSchema = z.object({
+  title: z.string().min(1).max(200).trim(),
+  description: z.string().max(2000).optional(),
+  discount_value: z.number().min(0).max(100),
+  start_date: z.string().datetime(),
+  end_date: z.string().datetime(),
+  // Validate foreign keys exist and user has access
+  channel_id: z.string().uuid(),
+  team_id: z.string().uuid(),
+})
+
+// Sanitize HTML content to prevent XSS
+// Use DOMPurify or similar for any rich text
+```
+
+### Secrets Management
 
 ```bash
-# Run all tests
-pytest tests/
+# NEVER commit secrets to git
+# .gitignore must include:
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
 
-# Run with coverage
-pytest tests/ --cov=backend
-
-# Run async tests
-pytest tests/ -v  # asyncio_mode="auto" is configured
+# Use environment variables for all secrets
+# Rotate keys regularly
+# Use different keys for dev/staging/production
 ```
 
-## Docker Services
+**Secret handling rules:**
+- `NEXT_PUBLIC_*` variables are exposed to browser - ONLY use for public values
+- `SUPABASE_SERVICE_ROLE_KEY` bypasses RLS - use sparingly, never expose to client
+- Store API keys for external services (Stripe, Kakao, etc.) server-side only
 
-The `docker-compose.yml` defines:
-- `backend` - FastAPI app (port 8000)
-- `frontend` - Next.js app (port 3000)
-- `db` - PostgreSQL 15 (port 5432)
-- `redis` - Redis 7 (port 6379)
-- `celery_worker` - Background task processor
-- `celery_beat` - Scheduled task scheduler
+### OWASP Top 10 Checklist
 
-## Keyboard Shortcuts (Browser-Safe)
+| Vulnerability | Prevention |
+|--------------|------------|
+| **Injection** | Parameterized queries via Supabase client; Zod validation |
+| **Broken Auth** | Supabase Auth; session verification on every request |
+| **Sensitive Data Exposure** | HTTPS only; encrypt PII; minimal data in responses |
+| **XXE** | Not applicable (JSON only) |
+| **Broken Access Control** | RLS policies; authorization checks; team scoping |
+| **Security Misconfiguration** | Environment-specific configs; security headers |
+| **XSS** | React auto-escaping; CSP headers; sanitize rich text |
+| **Insecure Deserialization** | Zod schema validation on all inputs |
+| **Vulnerable Components** | Regular `npm audit`; Dependabot alerts |
+| **Insufficient Logging** | Audit logs for sensitive operations |
 
-The FunctionKeyBar uses Alt+Number shortcuts (not F-keys, which browsers reserve):
+### Security Headers (Next.js)
 
-| Shortcut | Panel       |
-|----------|-------------|
-| Alt+1    | Help        |
-| Alt+2    | Calendar    |
-| Alt+3    | Analytics   |
-| Alt+4    | Channels    |
-| Alt+5    | Inventory   |
-| Alt+6    | Budget      |
-| Alt+7    | Competitors |
-| Alt+8    | Settings    |
+```typescript
+// next.config.ts
+const securityHeaders = [
+  { key: 'X-DNS-Prefetch-Control', value: 'on' },
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+]
+```
+
+### Audit Logging
+
+```typescript
+// Log sensitive operations for security audit
+interface AuditLog {
+  action: 'create' | 'update' | 'delete' | 'export' | 'invite' | 'role_change'
+  entity_type: 'promotion' | 'team' | 'member' | 'product'
+  entity_id: string
+  user_id: string
+  team_id: string
+  timestamp: Date
+  ip_address?: string
+  changes?: Record<string, { old: unknown; new: unknown }>
+}
+
+// Log these events:
+// - User login/logout
+// - Team member added/removed
+// - Role changes
+// - Bulk data exports
+// - Promotion create/update/delete
+// - Settings changes
+```
+
+### Rate Limiting
+
+```typescript
+// Implement rate limiting for API routes
+// Use Vercel's built-in or upstash/ratelimit
+
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
+
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(10, '10 s'), // 10 requests per 10 seconds
+})
+
+// Apply to sensitive endpoints (login, signup, password reset)
+```
+
+## Korean Language & Market
+
+- UI supports Korean/English (i18n ready)
+- Currency: Korean Won (원, 만, 억)
+- Korean calendar events (Chuseok, Lunar New Year, Black Friday Korea, etc.)
+- Korean e-commerce channels (Oliveyoung, Coupang, Naver, Kakao, Musinsa)
+- Date format: `YYYY년 MM월 DD일` or `YYYY-MM-DD`
+- Timezone: Asia/Seoul (KST, UTC+9)
 
 ## Notes for AI Assistants
 
-1. **Always check existing patterns** - This codebase has consistent patterns; follow them when adding new code
-2. **Async first** - Use `async/await` for I/O operations
-3. **Type safety** - Use type hints everywhere; MyPy strict mode is enabled
-4. **Korean support** - When adding features, consider both English and Korean users
-5. **Cost optimization** - Consider which model tier is appropriate for new features
-6. **State management** - Always work through `PromotorStateDict` for LangGraph operations
-7. **Tool definitions** - Use LangChain's `@tool` decorator for agent tools
-8. **Browser constraints** - Avoid F-keys and browser-reserved shortcuts; use Alt+Number patterns
+### Security First (CRITICAL)
+- **NEVER write code that bypasses RLS** - All queries must go through authenticated Supabase client
+- **NEVER expose service role key** to client-side code
+- **ALWAYS validate inputs** with Zod before database operations
+- **ALWAYS check team membership** before returning data
+- **NEVER log sensitive data** (passwords, tokens, PII)
+- **NEVER trust client-side IDs** - verify ownership server-side
+
+### Development Guidelines
+1. **Phase 1 focus** - Prioritize calendar and promotion features; avoid AI agent complexity
+2. **TypeScript first** - Full-stack TypeScript with strict mode; no `any` types
+3. **Monorepo patterns** - Use `packages/` for shared code between apps
+4. **Supabase patterns** - Use RLS for multi-tenant data; queries go in `packages/db/queries`
+5. **Korean support** - All user-facing text should support Korean localization
+6. **Simple solutions** - Start simple, add complexity only when needed
+7. **Component reuse** - Check `packages/ui` before creating new components
+8. **No premature optimization** - Make it work, make it right, then make it fast
+
+### Security Review Checklist (Before Committing)
+- [ ] All database queries use authenticated client (not service role)
+- [ ] RLS policies exist for new tables
+- [ ] Input validation with Zod on all API routes
+- [ ] Authorization checks (team membership + role) on sensitive operations
+- [ ] No secrets in code or logs
+- [ ] Parameterized queries (no string interpolation for SQL)
+
+## Future: AI Agent Integration (Phase 3)
+
+When AI agents are added in Phase 3, they will be implemented as a separate Python service:
+
+- **Framework**: FastAPI with async support
+- **Orchestration**: LangChain + LangGraph for multi-agent coordination
+- **Agents**: 21 specialized agents across 5 divisions (Strategy, Market Intelligence, Channel Management, Analytics, Operations)
+- **Integration**: REST API endpoints for web app to communicate with agent service
+
+Reference the `backend/` directory (if present) for existing agent patterns when Phase 3 development begins.
+
+---
+
+**Remember**: PromoHub is a fresh start. Focus on building a solid calendar-based promotion management system first. AI agents are a future enhancement, not the current priority.
