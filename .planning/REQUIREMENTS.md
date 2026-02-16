@@ -1,7 +1,7 @@
-# Requirements: PromoHub — Trade Promotion Manager
+# Requirements: PromoHub -- Trade Promotion Manager
 
 **Defined:** 2026-02-17
-**Core Value:** Brand managers can see all promotions on a calendar, know exactly whether each promotion was profitable (full margin P&L), and make data-driven decisions about which promo mechanics to repeat or kill — across all Korean e-commerce channels.
+**Core Value:** Brand managers can see all promotions on a calendar, know exactly whether each promotion was profitable (full margin P&L), and make data-driven decisions about which promo mechanics to repeat or kill -- across all Korean e-commerce channels.
 
 ## v1 Requirements
 
@@ -49,7 +49,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Localization
 
-- [ ] **LOC-01**: UI displays in Korean (dates, currency in KRW with 원/만/억, KST timezone)
+- [ ] **LOC-01**: UI displays in Korean (dates, currency in KRW with won/man/eok, KST timezone)
 - [ ] **LOC-02**: All Korean e-commerce channels pre-seeded with Korean names and promo types
 
 ## v2 Requirements
@@ -98,42 +98,42 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PLAN-01 | — | Pending |
-| PLAN-02 | — | Pending |
-| PLAN-03 | — | Pending |
-| PLAN-04 | — | Pending |
-| PLAN-05 | — | Pending |
-| PLAN-06 | — | Pending |
-| PLAN-07 | — | Pending |
-| PLAN-08 | — | Pending |
-| PLAN-09 | — | Pending |
-| PLAN-10 | — | Pending |
-| PLAN-11 | — | Pending |
-| PROD-01 | — | Pending |
-| PROD-02 | — | Pending |
-| PROD-03 | — | Pending |
-| PROD-04 | — | Pending |
-| FIN-01 | — | Pending |
-| FIN-02 | — | Pending |
-| FIN-03 | — | Pending |
-| FIN-04 | — | Pending |
-| FIN-05 | — | Pending |
-| FIN-06 | — | Pending |
-| FIN-07 | — | Pending |
-| FIN-08 | — | Pending |
-| TEAM-01 | — | Pending |
-| TEAM-02 | — | Pending |
-| TEAM-03 | — | Pending |
-| TEAM-04 | — | Pending |
-| TEAM-05 | — | Pending |
-| LOC-01 | — | Pending |
-| LOC-02 | — | Pending |
+| PLAN-01 | Phase 3: Calendar Views | Pending |
+| PLAN-02 | Phase 3: Calendar Views | Pending |
+| PLAN-03 | Phase 3: Calendar Views | Pending |
+| PLAN-04 | Phase 4: Promotion CRUD & Lifecycle | Pending |
+| PLAN-05 | Phase 4: Promotion CRUD & Lifecycle | Pending |
+| PLAN-06 | Phase 3: Calendar Views | Pending |
+| PLAN-07 | Phase 3: Calendar Views | Pending |
+| PLAN-08 | Phase 4: Promotion CRUD & Lifecycle | Pending |
+| PLAN-09 | Phase 5: Templates & Conflict Detection | Pending |
+| PLAN-10 | Phase 5: Templates & Conflict Detection | Pending |
+| PLAN-11 | Phase 3: Calendar Views | Pending |
+| PROD-01 | Phase 2: Products & Channels | Pending |
+| PROD-02 | Phase 2: Products & Channels | Pending |
+| PROD-03 | Phase 1: Foundation | Pending |
+| PROD-04 | Phase 5: Templates & Conflict Detection | Pending |
+| FIN-01 | Phase 6: P&L Engine | Pending |
+| FIN-02 | Phase 6: P&L Engine | Pending |
+| FIN-03 | Phase 6: P&L Engine | Pending |
+| FIN-04 | Phase 6: P&L Engine | Pending |
+| FIN-05 | Phase 7: ROI Analysis & Visualization | Pending |
+| FIN-06 | Phase 7: ROI Analysis & Visualization | Pending |
+| FIN-07 | Phase 7: ROI Analysis & Visualization | Pending |
+| FIN-08 | Phase 6: P&L Engine | Pending |
+| TEAM-01 | Phase 1: Foundation | Pending |
+| TEAM-02 | Phase 1: Foundation | Pending |
+| TEAM-03 | Phase 8: Team Management & Export | Pending |
+| TEAM-04 | Phase 8: Team Management & Export | Pending |
+| TEAM-05 | Phase 8: Team Management & Export | Pending |
+| LOC-01 | Phase 1: Foundation | Pending |
+| LOC-02 | Phase 1: Foundation | Pending |
 
 **Coverage:**
 - v1 requirements: 30 total
-- Mapped to phases: 0
-- Unmapped: 30
+- Mapped to phases: 30
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-17*
-*Last updated: 2026-02-17 after initial definition*
+*Last updated: 2026-02-17 after roadmap creation*
