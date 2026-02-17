@@ -48,10 +48,11 @@ Plans:
   1. User can create/edit/delete products with SKU codes, COGS, and retail price
   2. User can set different pricing per channel for the same product (e.g., OliveYoung price vs Coupang price)
   3. Product data persists across sessions and is scoped to the user's team
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
+- [ ] 02-01-PLAN.md — Database migration (product_channel_prices) + Product API routes (CRUD with nested channel prices) + validation schemas + i18n + seed data
+- [ ] 02-02-PLAN.md — Product management UI (ProductList with expandable channel prices + ProductForm with useFieldArray + products page CRUD wiring)
 
 ### Phase 3: Calendar Views
 **Goal**: Users can visually see all their promotions across channels on a calendar and find what they need through filtering
@@ -149,7 +150,7 @@ Note: Phases 2 and 3 both depend only on Phase 1 and could execute in parallel. 
 | Phase | Plans Complete | Status | Completed |
 |-------|---------------|--------|-----------|
 | 1. Foundation | 3/3 | ✓ Complete | 2026-02-18 |
-| 2. Products & Channels | 0/1 | Not started | - |
+| 2. Products & Channels | 0/2 | Not started | - |
 | 3. Calendar Views | 0/2 | Not started | - |
 | 4. Promotion CRUD & Lifecycle | 0/2 | Not started | - |
 | 5. Templates & Conflict Detection | 0/1 | Not started | - |
