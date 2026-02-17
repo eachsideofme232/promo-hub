@@ -12,7 +12,7 @@ PromoHub replaces Excel spreadsheets for K-beauty brand managers by delivering a
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation** - Auth, multi-tenant isolation, Korean locale, and channel setup
+- [x] **Phase 1: Foundation** - Auth, multi-tenant isolation, Korean locale, and channel setup ✓ 2026-02-18
 - [ ] **Phase 2: Products & Channels** - Product/SKU management with COGS and channel-specific pricing
 - [ ] **Phase 3: Calendar Views** - Month/week/day calendar with filtering and Korean retail events
 - [ ] **Phase 4: Promotion CRUD & Lifecycle** - Create, edit, delete promotions with full status tracking
@@ -148,7 +148,7 @@ Note: Phases 2 and 3 both depend only on Phase 1 and could execute in parallel. 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|---------------|--------|-----------|
-| 1. Foundation | 0/2 | Not started | - |
+| 1. Foundation | 3/3 | ✓ Complete | 2026-02-18 |
 | 2. Products & Channels | 0/1 | Not started | - |
 | 3. Calendar Views | 0/2 | Not started | - |
 | 4. Promotion CRUD & Lifecycle | 0/2 | Not started | - |
