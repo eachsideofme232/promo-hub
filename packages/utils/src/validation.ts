@@ -210,20 +210,34 @@ export type TeamInviteFormData = z.infer<typeof teamInviteSchema>
 // Product Validation Schemas
 // ============================================
 
-export const productSchema = z.object({
-  name: z.string().min(1, '상품명을 입력해주세요').max(200, '200자 이내로 입력해주세요'),
-  sku: z.string().min(1, 'SKU 코드를 입력해주세요').max(50, '50자 이내로 입력해주세요'),
-  barcode: z.string().max(50, '50자 이내로 입력해주세요').optional(),
-  category: z.string().max(100, '100자 이내로 입력해주세요').optional(),
-  brand: z.string().max(100, '100자 이내로 입력해주세요').optional(),
-  basePrice: z.number().min(0, '0 이상의 금액을 입력해주세요'),
-  costPrice: z.number().min(0, '0 이상의 금액을 입력해주세요').optional(),
-  teamId: z.string().uuid('올바른 팀을 선택해주세요'),
-  imageUrl: z.string().url('올바른 URL을 입력해주세요').optional().or(z.literal('')),
-  isActive: z.boolean().optional(),
+// Channel price schema for a single channel price entry
+export const channelPriceSchema = z.object({
+  channelId: z.string().uuid('올바른 채널을 선택해주세요'),
+  sellingPrice: z.number().int('정수 금액을 입력해주세요').min(0, '0 이상의 금액을 입력해주세요'),
+  channelFeeRate: z.number().min(0, '0 이상의 수수료율을 입력해주세요').max(100, '수수료율은 100% 이하여야 합니다').optional(),
+  isActive: z.boolean().default(true),
 })
 
-export type ProductFormData = z.infer<typeof productSchema>
+export type ChannelPriceFormData = z.infer<typeof channelPriceSchema>
+
+// Product form schema (client-side, NO teamId -- injected server-side)
+export const productFormSchema = z.object({
+  name: z.string().min(1, '상품명을 입력해주세요').max(200, '200자 이내로 입력해주세요').trim(),
+  sku: z.string().min(1, 'SKU 코드를 입력해주세요').max(50, '50자 이내로 입력해주세요').trim(),
+  barcode: z.string().max(50, '50자 이내로 입력해주세요').trim().optional().or(z.literal('')),
+  brand: z.string().max(100, '100자 이내로 입력해주세요').trim().optional().or(z.literal('')),
+  category: z.string().max(100, '100자 이내로 입력해주세요').trim().optional().or(z.literal('')),
+  description: z.string().max(2000, '2000자 이내로 입력해주세요').optional().or(z.literal('')),
+  basePrice: z.number().int('정수 금액을 입력해주세요').min(0, '0 이상의 금액을 입력해주세요'),
+  costPrice: z.number().int('정수 금액을 입력해주세요').min(0, '0 이상의 금액을 입력해주세요').optional(),
+  imageUrl: z.string().url('올바른 URL을 입력해주세요').optional().or(z.literal('')),
+  channelPrices: z.array(channelPriceSchema).default([]),
+})
+
+export type ProductFormData = z.infer<typeof productFormSchema>
+
+// Backward compatibility alias (referenced by productBulkImportSchema)
+export const productSchema = productFormSchema
 
 // Product bulk import
 export const productBulkImportSchema = z.object({
