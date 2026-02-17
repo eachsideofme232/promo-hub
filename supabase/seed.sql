@@ -4,18 +4,19 @@
 -- =============================================================================
 -- 1. CHANNELS (Korean e-commerce platforms)
 -- =============================================================================
-INSERT INTO channels (id, name, slug, color, logo_url, is_active) VALUES
-  ('c1000000-0000-0000-0000-000000000001', '올리브영', 'oliveyoung', '#00A651', NULL, true),
-  ('c1000000-0000-0000-0000-000000000002', '쿠팡', 'coupang', '#E31937', NULL, true),
-  ('c1000000-0000-0000-0000-000000000003', '네이버', 'naver', '#03C75A', NULL, true),
-  ('c1000000-0000-0000-0000-000000000004', '카카오', 'kakao', '#FEE500', NULL, true),
-  ('c1000000-0000-0000-0000-000000000005', '무신사', 'musinsa', '#000000', NULL, true),
-  ('c1000000-0000-0000-0000-000000000006', 'SSG', 'ssg', '#FF5252', NULL, true),
-  ('c1000000-0000-0000-0000-000000000007', '롯데ON', 'lotteon', '#E60012', NULL, true),
-  ('c1000000-0000-0000-0000-000000000008', '11번가', '11st', '#FF0050', NULL, true)
+INSERT INTO channels (id, name, slug, color, logo_url, is_active, promo_types) VALUES
+  ('c1000000-0000-0000-0000-000000000001', '올리브영', 'oliveyoung', '#00A651', NULL, true, '["percentage", "bogo", "gift", "coupon"]'::jsonb),
+  ('c1000000-0000-0000-0000-000000000002', '쿠팡', 'coupang', '#E31937', NULL, true, '["percentage", "coupon", "bundle"]'::jsonb),
+  ('c1000000-0000-0000-0000-000000000003', '네이버', 'naver', '#03C75A', NULL, true, '["percentage", "coupon", "gift"]'::jsonb),
+  ('c1000000-0000-0000-0000-000000000004', '카카오', 'kakao', '#FEE500', NULL, true, '["gift", "coupon", "bundle"]'::jsonb),
+  ('c1000000-0000-0000-0000-000000000005', '무신사', 'musinsa', '#000000', NULL, true, '["percentage", "coupon"]'::jsonb),
+  ('c1000000-0000-0000-0000-000000000006', 'SSG', 'ssg', '#FF5252', NULL, true, '["percentage", "coupon", "bogo"]'::jsonb),
+  ('c1000000-0000-0000-0000-000000000007', '롯데ON', 'lotteon', '#E60012', NULL, true, '["percentage", "coupon"]'::jsonb),
+  ('c1000000-0000-0000-0000-000000000008', '11번가', '11st', '#FF0050', NULL, true, '["percentage", "coupon", "bundle"]'::jsonb)
 ON CONFLICT (slug) DO UPDATE SET
   name = EXCLUDED.name,
-  color = EXCLUDED.color;
+  color = EXCLUDED.color,
+  promo_types = EXCLUDED.promo_types;
 
 -- =============================================================================
 -- 2. DEMO TEAM (for development/demo purposes)
