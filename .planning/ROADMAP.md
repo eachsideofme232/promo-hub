@@ -33,11 +33,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. UI displays Korean dates (YYYY-MM-DD), Korean Won currency (1,000 / 1만 / 1억), and KST timezone throughout
   4. Pre-seeded Korean e-commerce channels (OliveYoung, Coupang, Naver, Kakao, Musinsa) appear in the system with Korean names and channel-specific promo types
   5. User can add custom channels beyond the pre-seeded Korean ones
-**Plans**: 2 plans
+**Plans**: 3 plans
 
 Plans:
 - [ ] 01-01-PLAN.md — Database migrations (auto-team trigger, channel schema extension) + next-intl Korean localization + TeamProvider context
 - [ ] 01-02-PLAN.md — Channel API routes (CRUD with auth/validation) + channel management page UI
+- [ ] 01-03-PLAN.md — Gap closure: Wire Korean Won currency formatting into Phase 1 UI + fix ChannelForm anti-pattern
 
 ### Phase 2: Products & Channels
 **Goal**: Users can manage their product catalog with pricing data needed for promotion planning and P&L analysis
