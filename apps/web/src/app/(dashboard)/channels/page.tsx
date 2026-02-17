@@ -6,10 +6,12 @@ import { Plus, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTeam } from '@/components/providers/TeamProvider'
 import { ChannelList, ChannelForm } from '@/components/channels'
+import { FormattedWon } from '@/components/common/FormattedWon'
 import type { Channel, ChannelFormData } from '@/components/channels'
 
 export default function ChannelsPage() {
   const t = useTranslations('channels')
+  const td = useTranslations('dashboard')
   const { teamId, isLoading: isTeamLoading } = useTeam()
 
   const [channels, setChannels] = useState<Channel[]>([])
@@ -153,6 +155,31 @@ export default function ChannelsPage() {
           {t('addChannel')}
         </button>
       </div>
+
+      {/* Stats summary */}
+      {!isLoading && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+            <p className="text-sm text-gray-500">{td('totalChannels')}</p>
+            <p className="text-2xl font-bold text-gray-900">{channels.length}</p>
+          </div>
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+            <p className="text-sm text-gray-500">{td('systemChannels')}</p>
+            <p className="text-2xl font-bold text-gray-900">{channels.filter(c => c.isSystem).length}</p>
+          </div>
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+            <p className="text-sm text-gray-500">{td('customChannels')}</p>
+            <p className="text-2xl font-bold text-gray-900">{channels.filter(c => !c.isSystem).length}</p>
+          </div>
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+            <p className="text-sm text-gray-500">{td('monthlyBudget')}</p>
+            <p className="text-2xl font-bold text-gray-900">
+              <FormattedWon value={0} />
+            </p>
+            <p className="text-xs text-gray-400 mt-1">{td('notSet')}</p>
+          </div>
+        </div>
+      )}
 
       {/* Channel list */}
       {isLoading ? (

@@ -56,6 +56,13 @@
     "type": "유형",
     "actions": "관리"
   },
+  "dashboard": {
+    "totalChannels": "전체 채널",
+    "systemChannels": "기본 채널",
+    "customChannels": "사용자 채널",
+    "monthlyBudget": "월 예산",
+    "notSet": "미설정"
+  },
   "nav": {
     "calendar": "캘린더",
     "promotions": "프로모션",
