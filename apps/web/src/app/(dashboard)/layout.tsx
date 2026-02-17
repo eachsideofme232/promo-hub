@@ -4,6 +4,7 @@ import { Suspense, useState, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { FilterProvider, FilterSidebar, MobileFilterButton } from '@/components/filters'
 import { Sidebar, Header, MobileNav } from '@/components/layout'
+import { TeamProvider } from '@/components/providers/TeamProvider'
 
 // Route title mappings for dynamic header titles
 const routeTitles: Record<string, { name: string; nameEn: string }> = {
@@ -11,6 +12,7 @@ const routeTitles: Record<string, { name: string; nameEn: string }> = {
   '/calendar': { name: '캘린더', nameEn: 'Calendar' },
   '/promotions': { name: '프로모션', nameEn: 'Promotions' },
   '/products': { name: '상품', nameEn: 'Products' },
+  '/channels': { name: '채널', nameEn: 'Channels' },
   '/settings': { name: '설정', nameEn: 'Settings' },
 }
 
@@ -99,7 +101,9 @@ export default function DashboardLayout({
   return (
     <Suspense fallback={<DashboardLayoutSkeleton />}>
       <FilterProvider>
-        <DashboardLayoutContent>{children}</DashboardLayoutContent>
+        <TeamProvider>
+          <DashboardLayoutContent>{children}</DashboardLayoutContent>
+        </TeamProvider>
       </FilterProvider>
     </Suspense>
   )
