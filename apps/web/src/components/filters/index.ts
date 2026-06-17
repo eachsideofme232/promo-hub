@@ -1,7 +1,10 @@
 // Filter components barrel export
 
-export { FilterProvider, useFilterContext, CHANNELS, STATUSES } from './FilterProvider'
+export { FilterProvider, useFilterContext, STATUSES } from './FilterProvider'
 export type { FilterState, FilterContextValue, ChannelId } from './FilterProvider'
+
+// Channel data now comes from ChannelProvider (single source of truth)
+export { ChannelProvider, useChannels, useChannel } from '../providers/ChannelProvider'
 
 export { ChannelFilter } from './ChannelFilter'
 export { ChannelCheckbox } from './ChannelCheckbox'
@@ -11,8 +14,6 @@ export { FilterSidebar, MobileFilterButton } from './FilterSidebar'
 
 export {
   useFilters,
-  useChannel,
-  useChannels,
   useStatus,
   useStatuses,
   useFilterSummary,

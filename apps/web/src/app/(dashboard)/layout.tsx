@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { FilterProvider, FilterSidebar, MobileFilterButton } from '@/components/filters'
 import { Sidebar, Header, MobileNav } from '@/components/layout'
 import { TeamProvider } from '@/components/providers/TeamProvider'
+import { ChannelProvider } from '@/components/providers/ChannelProvider'
 
 // Route title mappings for dynamic header titles
 const routeTitles: Record<string, { name: string; nameEn: string }> = {
@@ -100,11 +101,13 @@ export default function DashboardLayout({
 }) {
   return (
     <Suspense fallback={<DashboardLayoutSkeleton />}>
-      <FilterProvider>
-        <TeamProvider>
-          <DashboardLayoutContent>{children}</DashboardLayoutContent>
-        </TeamProvider>
-      </FilterProvider>
+      <TeamProvider>
+        <ChannelProvider>
+          <FilterProvider>
+            <DashboardLayoutContent>{children}</DashboardLayoutContent>
+          </FilterProvider>
+        </ChannelProvider>
+      </TeamProvider>
     </Suspense>
   )
 }

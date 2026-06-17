@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import { Loader2, Save, X } from 'lucide-react'
 import type { Promotion, DiscountType } from '@promohub/types'
 import { promotionSchema, safeParse } from '@promohub/utils'
-import { ChannelSelect } from './ChannelSelect'
+import { ChannelSelect, type ChannelOption } from './ChannelSelect'
 import { DiscountTypeSelect } from './DiscountTypeSelect'
 import { DateRangeInput } from './DateRangeInput'
+import { useChannels } from '../providers/ChannelProvider'
 
 interface PromotionFormData {
   title: string
@@ -49,6 +50,15 @@ export function PromotionForm({
   isLoading = false,
 }: PromotionFormProps) {
   const router = useRouter()
+
+  // Channels sourced from the database via ChannelProvider (single source of truth)
+  const { channels } = useChannels()
+  const channelOptions: ChannelOption[] = channels.map((ch) => ({
+    id: ch.id,
+    name: ch.name,
+    slug: ch.slug,
+    color: ch.color,
+  }))
 
   // Initialize form data from promotion if editing
   const [formData, setFormData] = useState<PromotionFormData>(() => {
@@ -216,6 +226,7 @@ export function PromotionForm({
       <ChannelSelect
         value={formData.channelId}
         onChange={(value) => updateField('channelId', value)}
+        channels={channelOptions.length > 0 ? channelOptions : undefined}
         error={errors.channelId}
         disabled={isDisabled}
         required
