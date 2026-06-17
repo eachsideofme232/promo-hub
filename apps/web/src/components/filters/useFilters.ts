@@ -1,12 +1,8 @@
 'use client'
 
 import { useMemo } from 'react'
-import {
-  useFilterContext,
-  CHANNELS,
-  STATUSES,
-  type ChannelId,
-} from './FilterProvider'
+import { useFilterContext, STATUSES, type ChannelId } from './FilterProvider'
+import { useChannels } from '../providers/ChannelProvider'
 import type { PromotionStatus } from '@promohub/types'
 
 /**
@@ -17,23 +13,6 @@ export function useFilters() {
   const context = useFilterContext()
 
   return context
-}
-
-/**
- * Hook to get channel information by ID
- */
-export function useChannel(channelId: ChannelId) {
-  return useMemo(
-    () => CHANNELS.find((c) => c.id === channelId),
-    [channelId]
-  )
-}
-
-/**
- * Hook to get all available channels
- */
-export function useChannels() {
-  return CHANNELS
 }
 
 /**
@@ -56,6 +35,7 @@ export function useStatuses() {
 export function useFilterSummary() {
   const { channels, statuses, startDate, endDate, hasActiveFilters } =
     useFilterContext()
+  const { channels: availableChannels } = useChannels()
 
   return useMemo(() => {
     const parts: string[] = []
@@ -63,9 +43,9 @@ export function useFilterSummary() {
     // Channel summary
     if (channels.length === 0) {
       parts.push('채널 없음')
-    } else if (channels.length < CHANNELS.length) {
+    } else if (channels.length < availableChannels.length) {
       const selectedNames = channels
-        .map((id) => CHANNELS.find((c) => c.id === id)?.name)
+        .map((id) => availableChannels.find((c) => c.id === id)?.name)
         .filter(Boolean)
       if (selectedNames.length <= 2) {
         parts.push(selectedNames.join(', '))
@@ -102,10 +82,10 @@ export function useFilterSummary() {
       hasActiveFilters,
       channelCount: channels.length,
       statusCount: statuses.length,
-      totalChannels: CHANNELS.length,
+      totalChannels: availableChannels.length,
       totalStatuses: STATUSES.length,
     }
-  }, [channels, statuses, startDate, endDate, hasActiveFilters])
+  }, [channels, statuses, startDate, endDate, hasActiveFilters, availableChannels])
 }
 
 /**

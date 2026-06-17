@@ -1,17 +1,26 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import type { Promotion } from '@promohub/types'
-import { PromotionList, DEFAULT_CHANNELS } from '@/components/promotions'
+import { PromotionList } from '@/components/promotions'
+import { useChannels } from '@/components/filters'
+
+// Seed channel UUIDs (match supabase/seed.sql) so demo data lines up with the
+// database-sourced channels until promotions are wired to the API (Phase 4).
+const CHANNEL_OLIVEYOUNG = 'c1000000-0000-0000-0000-000000000001'
+const CHANNEL_COUPANG = 'c1000000-0000-0000-0000-000000000002'
+const CHANNEL_NAVER = 'c1000000-0000-0000-0000-000000000003'
+const CHANNEL_KAKAO = 'c1000000-0000-0000-0000-000000000004'
+const CHANNEL_MUSINSA = 'c1000000-0000-0000-0000-000000000005'
 
 // Demo promotions data - will be replaced with API calls
 const DEMO_PROMOTIONS: Promotion[] = [
   {
     id: '1',
     teamId: 'team-1',
-    channelId: 'oliveyoung',
+    channelId: CHANNEL_OLIVEYOUNG,
     title: '올리브영 2월 뷰티 페스타',
     description: '2월 한 달간 진행하는 대규모 뷰티 프로모션',
     status: 'active',
@@ -25,7 +34,7 @@ const DEMO_PROMOTIONS: Promotion[] = [
   {
     id: '2',
     teamId: 'team-1',
-    channelId: 'coupang',
+    channelId: CHANNEL_COUPANG,
     title: '쿠팡 발렌타인 기획전',
     description: '발렌타인데이 특별 기획전 쿠폰 할인',
     status: 'planned',
@@ -39,7 +48,7 @@ const DEMO_PROMOTIONS: Promotion[] = [
   {
     id: '3',
     teamId: 'team-1',
-    channelId: 'naver',
+    channelId: CHANNEL_NAVER,
     title: '네이버 브랜드 위크',
     description: '네이버 쇼핑 브랜드 위크 1+1 프로모션',
     status: 'planned',
@@ -53,7 +62,7 @@ const DEMO_PROMOTIONS: Promotion[] = [
   {
     id: '4',
     teamId: 'team-1',
-    channelId: 'kakao',
+    channelId: CHANNEL_KAKAO,
     title: '카카오 선물하기 기획전',
     description: '카카오 선물하기 단독 기획전',
     status: 'planned',
@@ -67,7 +76,7 @@ const DEMO_PROMOTIONS: Promotion[] = [
   {
     id: '5',
     teamId: 'team-1',
-    channelId: 'musinsa',
+    channelId: CHANNEL_MUSINSA,
     title: '무신사 뷰티 페스티벌',
     description: '무신사 뷰티 카테고리 론칭 기념 페스티벌',
     status: 'planned',
@@ -81,7 +90,7 @@ const DEMO_PROMOTIONS: Promotion[] = [
   {
     id: '6',
     teamId: 'team-1',
-    channelId: 'oliveyoung',
+    channelId: CHANNEL_OLIVEYOUNG,
     title: '올리브영 1월 세일',
     description: '1월 할인 행사 종료',
     status: 'ended',
@@ -95,7 +104,7 @@ const DEMO_PROMOTIONS: Promotion[] = [
   {
     id: '7',
     teamId: 'team-1',
-    channelId: 'coupang',
+    channelId: CHANNEL_COUPANG,
     title: '쿠팡 신년 행사 (취소)',
     description: '일정 변경으로 취소됨',
     status: 'cancelled',
@@ -108,15 +117,19 @@ const DEMO_PROMOTIONS: Promotion[] = [
   },
 ]
 
-// Convert default channels to the format expected by PromotionList
-const CHANNELS = DEFAULT_CHANNELS.map((ch) => ({
-  id: ch.id,
-  name: ch.name,
-  color: ch.color,
-}))
-
 export default function PromotionsPage() {
   const [promotions, setPromotions] = useState<Promotion[]>(DEMO_PROMOTIONS)
+
+  // Channels sourced from the database via ChannelProvider (single source of truth)
+  const { channels } = useChannels()
+  const channelOptions = useMemo(
+    () => channels.map((ch) => ({ id: ch.id, name: ch.name, color: ch.color })),
+    [channels]
+  )
+  const channelNameMap = useMemo(
+    () => Object.fromEntries(channels.map((ch) => [ch.id, ch.name])),
+    [channels]
+  )
 
   const handleDuplicate = useCallback((id: string) => {
     const originalPromotion = promotions.find((p) => p.id === id)
@@ -144,9 +157,9 @@ export default function PromotionsPage() {
 
   const handleBulkExport = useCallback((ids: string[]) => {
     const selectedPromotions = promotions.filter((p) => ids.includes(p.id))
-    const csvContent = generateCSV(selectedPromotions)
+    const csvContent = generateCSV(selectedPromotions, channelNameMap)
     downloadCSV(csvContent, 'promotions-export.csv')
-  }, [promotions])
+  }, [promotions, channelNameMap])
 
   return (
     <div className="h-full flex flex-col">
@@ -174,7 +187,7 @@ export default function PromotionsPage() {
       <div className="flex-1 p-6 overflow-auto bg-gray-50">
         <PromotionList
           promotions={promotions}
-          channels={CHANNELS}
+          channels={channelOptions}
           onDuplicate={handleDuplicate}
           onDelete={handleDelete}
           onBulkDelete={handleBulkDelete}
@@ -186,7 +199,10 @@ export default function PromotionsPage() {
 }
 
 // Helper functions for CSV export
-function generateCSV(promotions: Promotion[]): string {
+function generateCSV(
+  promotions: Promotion[],
+  channelMap: Record<string, string>
+): string {
   const headers = [
     '제목',
     '채널',
@@ -197,17 +213,6 @@ function generateCSV(promotions: Promotion[]): string {
     '종료일',
     '설명',
   ]
-
-  const channelMap: Record<string, string> = {
-    oliveyoung: '올리브영',
-    coupang: '쿠팡',
-    naver: '네이버',
-    kakao: '카카오',
-    musinsa: '무신사',
-    ssg: 'SSG',
-    lotteon: '롯데온',
-    '11st': '11번가',
-  }
 
   const statusMap: Record<string, string> = {
     planned: '예정',

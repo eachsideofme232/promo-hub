@@ -86,7 +86,10 @@ export function PromotionListItem({
           <div className="flex items-center gap-2 mt-2">
             {channel && (
               <span className="flex items-center gap-1.5 text-sm text-gray-600">
-                <span className={`w-2 h-2 rounded-full ${channel.color}`} />
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: channel.color }}
+                />
                 {channel.name}
               </span>
             )}

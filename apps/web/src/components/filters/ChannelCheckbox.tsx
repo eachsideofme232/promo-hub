@@ -6,7 +6,7 @@ import type { ChannelId } from './FilterProvider'
 interface ChannelCheckboxProps {
   id: ChannelId
   name: string
-  nameEn: string
+  nameEn?: string
   color: string
   checked: boolean
   onChange: (channelId: ChannelId) => void
@@ -80,7 +80,7 @@ export function ChannelCheckbox({
       {/* Channel name */}
       <div className="flex-1 min-w-0">
         <span className="text-sm font-medium text-gray-900">{name}</span>
-        <span className="text-xs text-gray-500 ml-1">({nameEn})</span>
+        {nameEn && <span className="text-xs text-gray-500 ml-1">({nameEn})</span>}
       </div>
     </div>
   )
