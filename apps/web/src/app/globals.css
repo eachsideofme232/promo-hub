@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Font stacks (self-hosted/system - no build-time network dependency) */
+:root {
+  --font-inter: 'Pretendard Variable', Pretendard, 'Inter', -apple-system,
+    BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Segoe UI',
+    'Malgun Gothic', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
+    'Liberation Mono', monospace;
+}
+
 /* Bloomberg Terminal Theme */
 :root {
   --bg-primary: #0a0a0a;

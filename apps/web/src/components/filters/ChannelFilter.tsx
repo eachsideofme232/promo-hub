@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { ChannelCheckbox } from './ChannelCheckbox'
-import { CHANNELS, useFilterContext, type ChannelId } from './FilterProvider'
+import { useFilterContext, type ChannelId } from './FilterProvider'
 
 interface ChannelFilterProps {
   defaultExpanded?: boolean
@@ -13,6 +13,8 @@ export function ChannelFilter({ defaultExpanded = true }: ChannelFilterProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
   const {
     channels,
+    availableChannels,
+    channelsLoading,
     toggleChannel,
     selectAllChannels,
     deselectAllChannels,
@@ -20,7 +22,7 @@ export function ChannelFilter({ defaultExpanded = true }: ChannelFilterProps) {
   } = useFilterContext()
 
   const selectedCount = channels.length
-  const totalCount = CHANNELS.length
+  const totalCount = availableChannels.length
   const allSelected = selectedCount === totalCount
   const noneSelected = selectedCount === 0
 
@@ -88,17 +90,23 @@ export function ChannelFilter({ defaultExpanded = true }: ChannelFilterProps) {
 
           {/* Channel checkboxes */}
           <div className="space-y-1">
-            {CHANNELS.map((channel) => (
-              <ChannelCheckbox
-                key={channel.id}
-                id={channel.id}
-                name={channel.name}
-                nameEn={channel.nameEn}
-                color={channel.color}
-                checked={isChannelSelected(channel.id)}
-                onChange={toggleChannel as (id: ChannelId) => void}
-              />
-            ))}
+            {channelsLoading ? (
+              <p className="px-2 py-1.5 text-xs text-gray-400">채널 불러오는 중...</p>
+            ) : availableChannels.length === 0 ? (
+              <p className="px-2 py-1.5 text-xs text-gray-400">사용 가능한 채널이 없습니다</p>
+            ) : (
+              availableChannels.map((channel) => (
+                <ChannelCheckbox
+                  key={channel.id}
+                  id={channel.id}
+                  name={channel.name}
+                  nameEn={channel.slug}
+                  color={channel.color}
+                  checked={isChannelSelected(channel.id)}
+                  onChange={toggleChannel as (id: ChannelId) => void}
+                />
+              ))
+            )}
           </div>
         </div>
       )}

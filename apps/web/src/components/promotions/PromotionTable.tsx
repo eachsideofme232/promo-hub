@@ -168,7 +168,8 @@ export function PromotionTable({
                     {channel && (
                       <span className="flex items-center gap-2">
                         <span
-                          className={`w-2 h-2 rounded-full ${channel.color}`}
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: channel.color }}
                         />
                         <span className="text-sm text-gray-700">
                           {channel.name}

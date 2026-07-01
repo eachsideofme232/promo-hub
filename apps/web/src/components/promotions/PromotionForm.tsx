@@ -2,9 +2,11 @@
 
 import { useState, useCallback, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Loader2, Save, X } from 'lucide-react'
 import type { Promotion, DiscountType } from '@promohub/types'
 import { promotionSchema, safeParse } from '@promohub/utils'
+import { useChannelOptions } from '@/hooks/useChannelOptions'
 import { ChannelSelect } from './ChannelSelect'
 import { DiscountTypeSelect } from './DiscountTypeSelect'
 import { DateRangeInput } from './DateRangeInput'
@@ -49,6 +51,7 @@ export function PromotionForm({
   isLoading = false,
 }: PromotionFormProps) {
   const router = useRouter()
+  const { channels, isLoading: channelsLoading, error: channelsError } = useChannelOptions()
 
   // Initialize form data from promotion if editing
   const [formData, setFormData] = useState<PromotionFormData>(() => {
@@ -126,9 +129,29 @@ export function PromotionForm({
           }),
         })
 
+        const payload = await response.json().catch(() => ({}))
+
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
-          throw new Error(errorData.message || '저장에 실패했습니다')
+          const message =
+            typeof payload.error === 'string'
+              ? payload.error
+              : payload.message || '저장에 실패했습니다'
+          throw new Error(message)
+        }
+
+        // Conflict detection: warn (non-blocking) when overlapping promotions exist
+        if (Array.isArray(payload.conflicts) && payload.conflicts.length > 0) {
+          toast.warning(
+            `같은 채널에 기간이 겹치는 프로모션이 ${payload.conflicts.length}건 있습니다`,
+            {
+              description: payload.conflicts
+                .map((c: { title: string }) => c.title)
+                .slice(0, 3)
+                .join(', '),
+            }
+          )
+        } else {
+          toast.success(mode === 'create' ? '프로모션이 생성되었습니다' : '프로모션이 저장되었습니다')
         }
 
         router.push('/promotions')
@@ -216,8 +239,10 @@ export function PromotionForm({
       <ChannelSelect
         value={formData.channelId}
         onChange={(value) => updateField('channelId', value)}
-        error={errors.channelId}
-        disabled={isDisabled}
+        channels={channels}
+        error={errors.channelId || channelsError || undefined}
+        disabled={isDisabled || channelsLoading}
+        placeholder={channelsLoading ? '채널 불러오는 중...' : '채널 선택 (Select channel)'}
         required
       />
 

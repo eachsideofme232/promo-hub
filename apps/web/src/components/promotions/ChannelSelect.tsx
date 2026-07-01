@@ -9,16 +9,17 @@ export interface ChannelOption {
   color: string
 }
 
-// Default Korean e-commerce channels
+// Default Korean e-commerce channels (fallback for previews only -
+// real usage should pass channels fetched from /api/channels)
 export const DEFAULT_CHANNELS: ChannelOption[] = [
-  { id: 'oliveyoung', name: '올리브영', slug: 'oliveyoung', color: 'bg-green-500' },
-  { id: 'coupang', name: '쿠팡', slug: 'coupang', color: 'bg-red-500' },
-  { id: 'naver', name: '네이버', slug: 'naver', color: 'bg-green-600' },
-  { id: 'kakao', name: '카카오', slug: 'kakao', color: 'bg-yellow-500' },
-  { id: 'musinsa', name: '무신사', slug: 'musinsa', color: 'bg-black' },
-  { id: 'ssg', name: 'SSG', slug: 'ssg', color: 'bg-pink-500' },
-  { id: 'lotteon', name: '롯데온', slug: 'lotteon', color: 'bg-red-600' },
-  { id: '11st', name: '11번가', slug: '11st', color: 'bg-orange-500' },
+  { id: 'oliveyoung', name: '올리브영', slug: 'oliveyoung', color: '#9ACD32' },
+  { id: 'coupang', name: '쿠팡', slug: 'coupang', color: '#E31837' },
+  { id: 'naver', name: '네이버', slug: 'naver', color: '#03C75A' },
+  { id: 'kakao', name: '카카오', slug: 'kakao', color: '#FEE500' },
+  { id: 'musinsa', name: '무신사', slug: 'musinsa', color: '#000000' },
+  { id: 'ssg', name: 'SSG', slug: 'ssg', color: '#FF1493' },
+  { id: 'lotteon', name: '롯데온', slug: 'lotteon', color: '#DA291C' },
+  { id: '11st', name: '11번가', slug: '11st', color: '#FF7A00' },
 ]
 
 interface ChannelSelectProps {
@@ -59,7 +60,8 @@ export const ChannelSelect = forwardRef<HTMLSelectElement, ChannelSelectProps>(
         <div className="relative">
           {selectedChannel && (
             <span
-              className={`absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full ${selectedChannel.color}`}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full"
+              style={{ backgroundColor: selectedChannel.color }}
             />
           )}
           <select

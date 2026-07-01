@@ -9,17 +9,12 @@ import {
 } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import type { PromotionStatus } from '@promohub/types'
+import { useChannelOptions, type ChannelOption } from '@/hooks/useChannelOptions'
 
-// Channel definitions with Korean e-commerce brand colors
-export const CHANNELS = [
-  { id: 'oliveyoung', name: '올리브영', nameEn: 'Oliveyoung', color: '#9ACD32' },
-  { id: 'coupang', name: '쿠팡', nameEn: 'Coupang', color: '#E31837' },
-  { id: 'naver', name: '네이버', nameEn: 'Naver', color: '#03C75A' },
-  { id: 'kakao', name: '카카오', nameEn: 'Kakao', color: '#FEE500' },
-  { id: 'musinsa', name: '무신사', nameEn: 'Musinsa', color: '#000000' },
-] as const
+// Channel ids are database UUIDs, fetched at runtime from /api/channels
+export type ChannelId = string
 
-export type ChannelId = (typeof CHANNELS)[number]['id']
+export type { ChannelOption }
 
 export const STATUSES: { id: PromotionStatus; name: string; nameEn: string }[] = [
   { id: 'planned', name: '예정', nameEn: 'Planned' },
@@ -36,6 +31,10 @@ export interface FilterState {
 }
 
 export interface FilterContextValue extends FilterState {
+  // Available channels (fetched from the API)
+  availableChannels: ChannelOption[]
+  channelsLoading: boolean
+
   // Channel filters
   toggleChannel: (channelId: ChannelId) => void
   setChannels: (channelIds: ChannelId[]) => void
@@ -69,16 +68,17 @@ const PARAM_STATUSES = 'statuses'
 const PARAM_START_DATE = 'startDate'
 const PARAM_END_DATE = 'endDate'
 
-function parseChannelsFromUrl(params: URLSearchParams): ChannelId[] {
+function parseChannelsFromUrl(
+  params: URLSearchParams,
+  availableChannels: ChannelOption[]
+): ChannelId[] {
   const channelsParam = params.get(PARAM_CHANNELS)
   if (!channelsParam) {
     // Default: all channels selected
-    return CHANNELS.map((c) => c.id)
+    return availableChannels.map((c) => c.id)
   }
   const channelIds = channelsParam.split(',').filter(Boolean)
-  return channelIds.filter((id): id is ChannelId =>
-    CHANNELS.some((c) => c.id === id)
-  )
+  return channelIds.filter((id) => availableChannels.some((c) => c.id === id))
 }
 
 function parseStatusesFromUrl(params: URLSearchParams): PromotionStatus[] {
@@ -101,16 +101,17 @@ export function FilterProvider({ children }: FilterProviderProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const { channels: availableChannels, isLoading: channelsLoading } = useChannelOptions()
 
   // Parse filter state from URL
   const filterState = useMemo<FilterState>(() => {
     return {
-      channels: parseChannelsFromUrl(searchParams),
+      channels: parseChannelsFromUrl(searchParams, availableChannels),
       statuses: parseStatusesFromUrl(searchParams),
       startDate: searchParams.get(PARAM_START_DATE),
       endDate: searchParams.get(PARAM_END_DATE),
     }
-  }, [searchParams])
+  }, [searchParams, availableChannels])
 
   // Update URL with new filter values
   const updateUrl = useCallback(
@@ -119,7 +120,7 @@ export function FilterProvider({ children }: FilterProviderProps) {
 
       if (updates.channels !== undefined) {
         if (
-          updates.channels.length === CHANNELS.length ||
+          updates.channels.length === availableChannels.length ||
           updates.channels.length === 0
         ) {
           // Remove param if all or none selected (use default)
@@ -160,7 +161,7 @@ export function FilterProvider({ children }: FilterProviderProps) {
       const newUrl = queryString ? `${pathname}?${queryString}` : pathname
       router.push(newUrl, { scroll: false })
     },
-    [pathname, router, searchParams]
+    [pathname, router, searchParams, availableChannels]
   )
 
   // Channel filter actions
@@ -182,16 +183,18 @@ export function FilterProvider({ children }: FilterProviderProps) {
   )
 
   const selectAllChannels = useCallback(() => {
-    updateUrl({ channels: CHANNELS.map((c) => c.id) })
-  }, [updateUrl])
+    updateUrl({ channels: availableChannels.map((c) => c.id) })
+  }, [updateUrl, availableChannels])
 
   const deselectAllChannels = useCallback(() => {
     updateUrl({ channels: [] })
   }, [updateUrl])
 
   const isChannelSelected = useCallback(
-    (channelId: ChannelId) => filterState.channels.includes(channelId),
-    [filterState.channels]
+    (channelId: ChannelId) =>
+      // While channels are still loading, treat everything as visible
+      availableChannels.length === 0 || filterState.channels.includes(channelId),
+    [filterState.channels, availableChannels]
   )
 
   // Status filter actions
@@ -246,18 +249,21 @@ export function FilterProvider({ children }: FilterProviderProps) {
   const hasActiveFilters = useMemo(() => {
     const hasChannelFilter =
       filterState.channels.length > 0 &&
-      filterState.channels.length < CHANNELS.length
+      availableChannels.length > 0 &&
+      filterState.channels.length < availableChannels.length
     const hasStatusFilter =
       filterState.statuses.length > 0 &&
       filterState.statuses.length < STATUSES.length
     const hasDateFilter = !!filterState.startDate || !!filterState.endDate
 
     return hasChannelFilter || hasStatusFilter || hasDateFilter
-  }, [filterState])
+  }, [filterState, availableChannels])
 
   const contextValue = useMemo<FilterContextValue>(
     () => ({
       ...filterState,
+      availableChannels,
+      channelsLoading,
       toggleChannel,
       setChannels,
       selectAllChannels,
@@ -275,6 +281,8 @@ export function FilterProvider({ children }: FilterProviderProps) {
     }),
     [
       filterState,
+      availableChannels,
+      channelsLoading,
       toggleChannel,
       setChannels,
       selectAllChannels,
