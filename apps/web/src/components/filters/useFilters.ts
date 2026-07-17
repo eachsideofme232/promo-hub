@@ -3,7 +3,6 @@
 import { useMemo } from 'react'
 import {
   useFilterContext,
-  CHANNELS,
   STATUSES,
   type ChannelId,
 } from './FilterProvider'
@@ -23,17 +22,19 @@ export function useFilters() {
  * Hook to get channel information by ID
  */
 export function useChannel(channelId: ChannelId) {
+  const { availableChannels } = useFilterContext()
   return useMemo(
-    () => CHANNELS.find((c) => c.id === channelId),
-    [channelId]
+    () => availableChannels.find((c) => c.id === channelId),
+    [channelId, availableChannels]
   )
 }
 
 /**
- * Hook to get all available channels
+ * Hook to get all available channels (fetched from the API)
  */
 export function useChannels() {
-  return CHANNELS
+  const { availableChannels } = useFilterContext()
+  return availableChannels
 }
 
 /**
@@ -54,8 +55,14 @@ export function useStatuses() {
  * Hook to get a summary of active filters for display
  */
 export function useFilterSummary() {
-  const { channels, statuses, startDate, endDate, hasActiveFilters } =
-    useFilterContext()
+  const {
+    channels,
+    availableChannels,
+    statuses,
+    startDate,
+    endDate,
+    hasActiveFilters,
+  } = useFilterContext()
 
   return useMemo(() => {
     const parts: string[] = []
@@ -63,9 +70,9 @@ export function useFilterSummary() {
     // Channel summary
     if (channels.length === 0) {
       parts.push('채널 없음')
-    } else if (channels.length < CHANNELS.length) {
+    } else if (availableChannels.length > 0 && channels.length < availableChannels.length) {
       const selectedNames = channels
-        .map((id) => CHANNELS.find((c) => c.id === id)?.name)
+        .map((id) => availableChannels.find((c) => c.id === id)?.name)
         .filter(Boolean)
       if (selectedNames.length <= 2) {
         parts.push(selectedNames.join(', '))
@@ -102,17 +109,18 @@ export function useFilterSummary() {
       hasActiveFilters,
       channelCount: channels.length,
       statusCount: statuses.length,
-      totalChannels: CHANNELS.length,
+      totalChannels: availableChannels.length,
       totalStatuses: STATUSES.length,
     }
-  }, [channels, statuses, startDate, endDate, hasActiveFilters])
+  }, [channels, availableChannels, statuses, startDate, endDate, hasActiveFilters])
 }
 
 /**
  * Hook to check if a promotion should be visible based on current filters
  */
 export function usePromotionVisibility() {
-  const { channels, statuses, startDate, endDate } = useFilterContext()
+  const { channels, availableChannels, statuses, startDate, endDate } =
+    useFilterContext()
 
   return useMemo(() => {
     return (promotion: {
@@ -121,8 +129,12 @@ export function usePromotionVisibility() {
       startDate: string
       endDate: string
     }): boolean => {
-      // Check channel filter
-      if (channels.length > 0 && !channels.includes(promotion.channelId as ChannelId)) {
+      // Check channel filter (skip while channels are still loading)
+      if (
+        availableChannels.length > 0 &&
+        channels.length > 0 &&
+        !channels.includes(promotion.channelId)
+      ) {
         return false
       }
 
@@ -141,5 +153,5 @@ export function usePromotionVisibility() {
 
       return true
     }
-  }, [channels, statuses, startDate, endDate])
+  }, [channels, availableChannels, statuses, startDate, endDate])
 }

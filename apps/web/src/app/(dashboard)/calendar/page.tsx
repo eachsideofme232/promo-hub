@@ -1,143 +1,125 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+} from 'date-fns'
 import { CalendarView } from '@/components/calendar'
-import { useFilters, CHANNELS } from '@/components/filters'
+import { useFilters } from '@/components/filters'
 import type { CalendarPromotion } from '@promohub/types'
 
-// Demo promotions data
-const DEMO_PROMOTIONS: CalendarPromotion[] = [
-  {
-    id: '1',
-    title: '올리브영 2월 세일',
-    status: 'active',
-    channelId: 'oliveyoung',
-    channelName: '올리브영',
-    channelColor: '#9ACD32',
-    startDate: '2026-02-05',
-    endDate: '2026-02-12',
-    isStart: true,
-    isEnd: true,
-    isMultiDay: true,
-  },
-  {
-    id: '2',
-    title: '쿠팡 발렌타인 기획전',
-    status: 'planned',
-    channelId: 'coupang',
-    channelName: '쿠팡',
-    channelColor: '#E31837',
-    startDate: '2026-02-10',
-    endDate: '2026-02-14',
-    isStart: true,
-    isEnd: true,
-    isMultiDay: true,
-  },
-  {
-    id: '3',
-    title: '네이버 브랜드 위크',
-    status: 'planned',
-    channelId: 'naver',
-    channelName: '네이버',
-    channelColor: '#03C75A',
-    startDate: '2026-02-15',
-    endDate: '2026-02-22',
-    isStart: true,
-    isEnd: true,
-    isMultiDay: true,
-  },
-  {
-    id: '4',
-    title: '카카오 선물하기 프로모션',
-    status: 'ended',
-    channelId: 'kakao',
-    channelName: '카카오',
-    channelColor: '#FEE500',
-    startDate: '2026-02-01',
-    endDate: '2026-02-07',
-    isStart: true,
-    isEnd: true,
-    isMultiDay: true,
-  },
-  {
-    id: '5',
-    title: '무신사 브랜드데이',
-    status: 'active',
-    channelId: 'musinsa',
-    channelName: '무신사',
-    channelColor: '#000000',
-    startDate: '2026-02-08',
-    endDate: '2026-02-20',
-    isStart: true,
-    isEnd: true,
-    isMultiDay: true,
-  },
-  {
-    id: '6',
-    title: '올리브영 월말 정산 세일',
-    status: 'planned',
-    channelId: 'oliveyoung',
-    channelName: '올리브영',
-    channelColor: '#9ACD32',
-    startDate: '2026-02-25',
-    endDate: '2026-02-28',
-    isStart: true,
-    isEnd: true,
-    isMultiDay: true,
-  },
-]
-
-// Convert CHANNELS from filter system to ChannelOption format
-const channelOptions = CHANNELS.map((channel) => ({
-  id: channel.id,
-  name: channel.name,
-  color: channel.color,
-}))
+function getInitialRange() {
+  const now = new Date()
+  return {
+    start: format(startOfWeek(startOfMonth(now), { weekStartsOn: 0 }), 'yyyy-MM-dd'),
+    end: format(endOfWeek(endOfMonth(now), { weekStartsOn: 0 }), 'yyyy-MM-dd'),
+  }
+}
 
 export default function CalendarPage() {
-  const [promotions] = useState<CalendarPromotion[]>(DEMO_PROMOTIONS)
+  const router = useRouter()
+  const [promotions, setPromotions] = useState<CalendarPromotion[]>([])
+  const [range, setRange] = useState(getInitialRange)
+  const [error, setError] = useState<string | null>(null)
 
-  // Use existing filter context for channel and status filtering
-  const { channels: selectedChannels, statuses: selectedStatuses, isChannelSelected, isStatusSelected } = useFilters()
+  const { availableChannels, isChannelSelected, isStatusSelected } = useFilters()
 
-  // Filter promotions based on selected channels and statuses
+  // Fetch promotions for the visible date range
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchPromotions() {
+      setError(null)
+      try {
+        const response = await fetch(
+          `/api/calendar?start=${range.start}&end=${range.end}`
+        )
+        const payload = await response.json().catch(() => ({}))
+        if (!response.ok) {
+          throw new Error(
+            typeof payload.error === 'string'
+              ? payload.error
+              : '프로모션을 불러오지 못했습니다'
+          )
+        }
+        if (!cancelled) {
+          setPromotions(payload.data ?? [])
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '프로모션을 불러오지 못했습니다')
+        }
+      }
+    }
+
+    fetchPromotions()
+    return () => {
+      cancelled = true
+    }
+  }, [range])
+
+  const channelOptions = useMemo(
+    () =>
+      availableChannels.map((channel) => ({
+        id: channel.id,
+        name: channel.name,
+        color: channel.color,
+      })),
+    [availableChannels]
+  )
+
+  // Apply channel and status filters
   const filteredPromotions = useMemo(() => {
     return promotions.filter((promo) => {
-      const channelMatch = isChannelSelected(promo.channelId as typeof selectedChannels[number])
-      const statusMatch = isStatusSelected(promo.status)
-      return channelMatch && statusMatch
+      return isChannelSelected(promo.channelId) && isStatusSelected(promo.status)
     })
   }, [promotions, isChannelSelected, isStatusSelected])
 
   const handleAddPromotion = useCallback(() => {
-    // TODO: Open promotion creation modal
-    console.log('Add promotion clicked')
-  }, [])
+    router.push('/promotions/new')
+  }, [router])
 
-  const handlePromotionClick = useCallback((promotion: CalendarPromotion) => {
-    // TODO: Open promotion detail modal
-    console.log('Promotion clicked:', promotion)
-  }, [])
+  const handlePromotionClick = useCallback(
+    (promotion: CalendarPromotion) => {
+      router.push(`/promotions/${promotion.id}`)
+    },
+    [router]
+  )
 
-  const handleDateClick = useCallback((date: Date) => {
-    // TODO: Open promotion creation modal with pre-filled date
-    console.log('Date clicked:', date)
-  }, [])
+  const handleDateClick = useCallback(() => {
+    router.push('/promotions/new')
+  }, [router])
 
   const handleDateRangeChange = useCallback((start: Date, end: Date) => {
-    // TODO: Fetch promotions for the new date range
-    console.log('Date range changed:', start, end)
+    setRange({
+      start: format(start, 'yyyy-MM-dd'),
+      end: format(end, 'yyyy-MM-dd'),
+    })
   }, [])
 
   return (
-    <CalendarView
-      promotions={filteredPromotions}
-      channels={channelOptions}
-      initialView="month"
-      onAddPromotion={handleAddPromotion}
-      onPromotionClick={handlePromotionClick}
-      onDateClick={handleDateClick}
-      onDateRangeChange={handleDateRangeChange}
-    />
+    <div className="h-full flex flex-col">
+      {error && (
+        <div className="m-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
+      <div className="flex-1 min-h-0">
+        <CalendarView
+          promotions={filteredPromotions}
+          channels={channelOptions}
+          initialView="month"
+          onAddPromotion={handleAddPromotion}
+          onPromotionClick={handlePromotionClick}
+          onDateClick={handleDateClick}
+          onDateRangeChange={handleDateRangeChange}
+        />
+      </div>
+    </div>
   )
 }

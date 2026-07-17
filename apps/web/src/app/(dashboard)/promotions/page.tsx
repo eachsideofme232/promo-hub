@@ -1,152 +1,139 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { Plus, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import type { Promotion } from '@promohub/types'
-import { PromotionList, DEFAULT_CHANNELS } from '@/components/promotions'
+import { PromotionList } from '@/components/promotions'
+import { useFilters } from '@/components/filters'
 
-// Demo promotions data - will be replaced with API calls
-const DEMO_PROMOTIONS: Promotion[] = [
-  {
-    id: '1',
-    teamId: 'team-1',
-    channelId: 'oliveyoung',
-    title: '올리브영 2월 뷰티 페스타',
-    description: '2월 한 달간 진행하는 대규모 뷰티 프로모션',
-    status: 'active',
-    discountType: 'percentage',
-    discountValue: '30%',
-    startDate: '2026-02-01',
-    endDate: '2026-02-14',
-    createdAt: '2026-01-15T09:00:00Z',
-    updatedAt: '2026-01-20T14:30:00Z',
-  },
-  {
-    id: '2',
-    teamId: 'team-1',
-    channelId: 'coupang',
-    title: '쿠팡 발렌타인 기획전',
-    description: '발렌타인데이 특별 기획전 쿠폰 할인',
-    status: 'planned',
-    discountType: 'coupon',
-    discountValue: '5,000원',
-    startDate: '2026-02-10',
-    endDate: '2026-02-14',
-    createdAt: '2026-01-18T10:00:00Z',
-    updatedAt: '2026-01-18T10:00:00Z',
-  },
-  {
-    id: '3',
-    teamId: 'team-1',
-    channelId: 'naver',
-    title: '네이버 브랜드 위크',
-    description: '네이버 쇼핑 브랜드 위크 1+1 프로모션',
-    status: 'planned',
-    discountType: 'bogo',
-    discountValue: '1+1',
-    startDate: '2026-02-15',
-    endDate: '2026-02-22',
-    createdAt: '2026-01-20T11:00:00Z',
-    updatedAt: '2026-01-20T11:00:00Z',
-  },
-  {
-    id: '4',
-    teamId: 'team-1',
-    channelId: 'kakao',
-    title: '카카오 선물하기 기획전',
-    description: '카카오 선물하기 단독 기획전',
-    status: 'planned',
-    discountType: 'gift',
-    discountValue: '미니어처 증정',
-    startDate: '2026-02-20',
-    endDate: '2026-02-28',
-    createdAt: '2026-01-22T09:00:00Z',
-    updatedAt: '2026-01-22T09:00:00Z',
-  },
-  {
-    id: '5',
-    teamId: 'team-1',
-    channelId: 'musinsa',
-    title: '무신사 뷰티 페스티벌',
-    description: '무신사 뷰티 카테고리 론칭 기념 페스티벌',
-    status: 'planned',
-    discountType: 'bundle',
-    discountValue: '세트 20% 할인',
-    startDate: '2026-03-01',
-    endDate: '2026-03-15',
-    createdAt: '2026-01-25T10:00:00Z',
-    updatedAt: '2026-01-25T10:00:00Z',
-  },
-  {
-    id: '6',
-    teamId: 'team-1',
-    channelId: 'oliveyoung',
-    title: '올리브영 1월 세일',
-    description: '1월 할인 행사 종료',
-    status: 'ended',
-    discountType: 'percentage',
-    discountValue: '25%',
-    startDate: '2026-01-01',
-    endDate: '2026-01-15',
-    createdAt: '2025-12-20T09:00:00Z',
-    updatedAt: '2026-01-16T09:00:00Z',
-  },
-  {
-    id: '7',
-    teamId: 'team-1',
-    channelId: 'coupang',
-    title: '쿠팡 신년 행사 (취소)',
-    description: '일정 변경으로 취소됨',
-    status: 'cancelled',
-    discountType: 'coupon',
-    discountValue: '10,000원',
-    startDate: '2026-01-05',
-    endDate: '2026-01-10',
-    createdAt: '2025-12-28T11:00:00Z',
-    updatedAt: '2026-01-03T14:00:00Z',
-  },
-]
-
-// Convert default channels to the format expected by PromotionList
-const CHANNELS = DEFAULT_CHANNELS.map((ch) => ({
-  id: ch.id,
-  name: ch.name,
-  color: ch.color,
-}))
+async function readErrorMessage(response: Response, fallback: string) {
+  const payload = await response.json().catch(() => ({}))
+  return typeof payload.error === 'string' ? payload.error : fallback
+}
 
 export default function PromotionsPage() {
-  const [promotions, setPromotions] = useState<Promotion[]>(DEMO_PROMOTIONS)
+  const [promotions, setPromotions] = useState<Promotion[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleDuplicate = useCallback((id: string) => {
-    const originalPromotion = promotions.find((p) => p.id === id)
-    if (!originalPromotion) return
+  const { availableChannels } = useFilters()
 
-    const newPromotion: Promotion = {
-      ...originalPromotion,
-      id: `${Date.now()}`,
-      title: `${originalPromotion.title} (복사본)`,
-      status: 'planned',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+  const channels = useMemo(
+    () =>
+      availableChannels.map((channel) => ({
+        id: channel.id,
+        name: channel.name,
+        color: channel.color,
+      })),
+    [availableChannels]
+  )
+
+  const channelNameById = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const channel of availableChannels) {
+      map.set(channel.id, channel.name)
     }
+    return map
+  }, [availableChannels])
 
-    setPromotions((prev) => [newPromotion, ...prev])
-  }, [promotions])
-
-  const handleDelete = useCallback((id: string) => {
-    setPromotions((prev) => prev.filter((p) => p.id !== id))
+  const fetchPromotions = useCallback(async () => {
+    setError(null)
+    try {
+      const response = await fetch('/api/promotions?limit=100')
+      if (!response.ok) {
+        throw new Error(await readErrorMessage(response, '프로모션을 불러오지 못했습니다'))
+      }
+      const payload = await response.json()
+      setPromotions(payload.data ?? [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '프로모션을 불러오지 못했습니다')
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
-  const handleBulkDelete = useCallback((ids: string[]) => {
-    setPromotions((prev) => prev.filter((p) => !ids.includes(p.id)))
-  }, [])
+  useEffect(() => {
+    fetchPromotions()
+  }, [fetchPromotions])
 
-  const handleBulkExport = useCallback((ids: string[]) => {
-    const selectedPromotions = promotions.filter((p) => ids.includes(p.id))
-    const csvContent = generateCSV(selectedPromotions)
-    downloadCSV(csvContent, 'promotions-export.csv')
-  }, [promotions])
+  const handleDuplicate = useCallback(
+    async (id: string) => {
+      const original = promotions.find((p) => p.id === id)
+      if (!original) return
+
+      try {
+        const response = await fetch('/api/promotions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: `${original.title} (복사본)`,
+            description: original.description ?? '',
+            channelId: original.channelId,
+            status: 'planned',
+            discountType: original.discountType,
+            discountValue: original.discountValue,
+            startDate: original.startDate,
+            endDate: original.endDate,
+            memo: original.memo ?? '',
+          }),
+        })
+        if (!response.ok) {
+          throw new Error(await readErrorMessage(response, '복제에 실패했습니다'))
+        }
+        toast.success('프로모션이 복제되었습니다')
+        await fetchPromotions()
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : '복제에 실패했습니다')
+      }
+    },
+    [promotions, fetchPromotions]
+  )
+
+  const handleDelete = useCallback(
+    async (id: string) => {
+      try {
+        const response = await fetch(`/api/promotions/${id}`, { method: 'DELETE' })
+        if (!response.ok) {
+          throw new Error(await readErrorMessage(response, '삭제에 실패했습니다'))
+        }
+        toast.success('프로모션이 삭제되었습니다')
+        setPromotions((prev) => prev.filter((p) => p.id !== id))
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : '삭제에 실패했습니다')
+      }
+    },
+    []
+  )
+
+  const handleBulkDelete = useCallback(
+    async (ids: string[]) => {
+      const results = await Promise.allSettled(
+        ids.map((id) => fetch(`/api/promotions/${id}`, { method: 'DELETE' }))
+      )
+      const failed = results.filter(
+        (r) => r.status === 'rejected' || !r.value.ok
+      ).length
+
+      if (failed > 0) {
+        toast.error(`${failed}건 삭제에 실패했습니다`)
+      } else {
+        toast.success(`${ids.length}건이 삭제되었습니다`)
+      }
+      await fetchPromotions()
+    },
+    [fetchPromotions]
+  )
+
+  const handleBulkExport = useCallback(
+    (ids: string[]) => {
+      const selectedPromotions = promotions.filter((p) => ids.includes(p.id))
+      const csvContent = generateCSV(selectedPromotions, channelNameById)
+      downloadCSV(csvContent, 'promotions-export.csv')
+    },
+    [promotions, channelNameById]
+  )
 
   return (
     <div className="h-full flex flex-col">
@@ -172,21 +159,35 @@ export default function PromotionsPage() {
 
       {/* Content */}
       <div className="flex-1 p-6 overflow-auto bg-gray-50">
-        <PromotionList
-          promotions={promotions}
-          channels={CHANNELS}
-          onDuplicate={handleDuplicate}
-          onDelete={handleDelete}
-          onBulkDelete={handleBulkDelete}
-          onBulkExport={handleBulkExport}
-        />
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-24">
+            <Loader2 size={32} className="animate-spin text-primary-600" />
+          </div>
+        ) : (
+          <PromotionList
+            promotions={promotions}
+            channels={channels}
+            onDuplicate={handleDuplicate}
+            onDelete={handleDelete}
+            onBulkDelete={handleBulkDelete}
+            onBulkExport={handleBulkExport}
+          />
+        )}
       </div>
     </div>
   )
 }
 
 // Helper functions for CSV export
-function generateCSV(promotions: Promotion[]): string {
+function generateCSV(
+  promotions: Promotion[],
+  channelNameById: Map<string, string>
+): string {
   const headers = [
     '제목',
     '채널',
@@ -197,17 +198,6 @@ function generateCSV(promotions: Promotion[]): string {
     '종료일',
     '설명',
   ]
-
-  const channelMap: Record<string, string> = {
-    oliveyoung: '올리브영',
-    coupang: '쿠팡',
-    naver: '네이버',
-    kakao: '카카오',
-    musinsa: '무신사',
-    ssg: 'SSG',
-    lotteon: '롯데온',
-    '11st': '11번가',
-  }
 
   const statusMap: Record<string, string> = {
     planned: '예정',
@@ -226,7 +216,7 @@ function generateCSV(promotions: Promotion[]): string {
 
   const rows = promotions.map((promo) => [
     promo.title,
-    channelMap[promo.channelId] || promo.channelId,
+    channelNameById.get(promo.channelId) || promo.channelId,
     statusMap[promo.status] || promo.status,
     discountTypeMap[promo.discountType] || promo.discountType,
     promo.discountValue,

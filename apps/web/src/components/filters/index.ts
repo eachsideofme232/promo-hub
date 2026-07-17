@@ -1,7 +1,7 @@
 // Filter components barrel export
 
-export { FilterProvider, useFilterContext, CHANNELS, STATUSES } from './FilterProvider'
-export type { FilterState, FilterContextValue, ChannelId } from './FilterProvider'
+export { FilterProvider, useFilterContext, STATUSES } from './FilterProvider'
+export type { FilterState, FilterContextValue, ChannelId, ChannelOption } from './FilterProvider'
 
 export { ChannelFilter } from './ChannelFilter'
 export { ChannelCheckbox } from './ChannelCheckbox'

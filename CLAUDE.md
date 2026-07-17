@@ -221,15 +221,21 @@ apps/web/
 
 ### What Needs Implementation (Priority Order)
 
-#### Priority 1: HIGH - Replace Demo Data with API Calls
+#### Priority 1: HIGH - Replace Demo Data with API Calls (COMPLETED 2026-07-01)
 
-| Issue | Location | Action Required |
-|-------|----------|-----------------|
-| Calendar uses static data | `apps/web/src/app/(dashboard)/calendar/page.tsx:9-88` | Remove `DEMO_PROMOTIONS`, fetch via API |
-| Promotions list uses static data | `apps/web/src/app/(dashboard)/promotions/page.tsx:10-109` | Remove `DEMO_PROMOTIONS`, fetch via API |
-| FilterProvider uses static channels | `apps/web/src/components/filters/FilterProvider.tsx:14-20` | Fetch channels from database |
-| API Routes are stubs | `apps/web/src/app/api/promotions/route.ts` | Connect to `@promohub/db` queries, add auth/validation |
-| Hardcoded Demo Team ID | `apps/web/src/app/(dashboard)/promotions/new/page.tsx:8` | Get team_id from authenticated session |
+| Issue | Location | Status |
+|-------|----------|--------|
+| Calendar uses static data | `apps/web/src/app/(dashboard)/calendar/page.tsx` | DONE - fetches `/api/calendar` per visible range |
+| Promotions list uses static data | `apps/web/src/app/(dashboard)/promotions/page.tsx` | DONE - fetches `/api/promotions`, delete/duplicate wired |
+| FilterProvider uses static channels | `apps/web/src/components/filters/FilterProvider.tsx` | DONE - fetches `/api/channels` (UUID-keyed) via `useChannelOptions` |
+| API Routes are stubs | `apps/web/src/app/api/promotions/`, `api/calendar/`, `api/teams/` | DONE - auth + team scoping + Zod validation |
+| Hardcoded Demo Team ID | `apps/web/src/app/(dashboard)/promotions/new/page.tsx` | DONE - uses `useTeam()` from TeamProvider |
+
+**Critical DB fix (2026-07-01)**: `team_members` RLS policies were self-referential, causing
+`infinite recursion detected in policy` (42P17) on every membership query. Fixed in
+`supabase/migrations/20260701000000_fix_team_members_rls_recursion.sql` using SECURITY DEFINER
+helpers `is_team_member()` / `is_team_admin()` and the `create_team_with_owner()` RPC
+(used by `POST /api/teams`).
 
 #### Priority 2: MEDIUM - Core Features
 
@@ -244,7 +250,7 @@ apps/web/
 
 | Issue | Location | Action Required |
 |-------|----------|-----------------|
-| Inconsistent Channel IDs | FilterProvider vs Database | Unify to use UUIDs or create mapping layer |
+| Inconsistent Channel IDs | FilterProvider vs Database | DONE (2026-07-01) - UUIDs used consistently, channels fetched from API |
 | Missing Error Boundaries | `apps/web/src/components/common/` | Create `ErrorBoundary.tsx` |
 | Incomplete Korean localization | Various UI files | Setup i18n library (next-intl recommended) |
 
@@ -280,23 +286,25 @@ When implementing features, ensure:
 GET    /api/auth/callback          # OAuth/email confirmation redirect handler  [DONE]
 
 # Promotions
-GET    /api/promotions             # List promotions (with filters)        [STUB]
-POST   /api/promotions             # Create promotion                      [STUB]
-GET    /api/promotions/[id]        # Get promotion detail                  [TODO]
-PATCH  /api/promotions/[id]        # Update promotion                      [TODO]
-DELETE /api/promotions/[id]        # Delete promotion                      [TODO]
+GET    /api/promotions             # List promotions (with filters)        [DONE]
+POST   /api/promotions             # Create promotion (+conflict warning)  [DONE]
+GET    /api/promotions/[id]        # Get promotion detail                  [DONE]
+PATCH  /api/promotions/[id]        # Update promotion                      [DONE]
+DELETE /api/promotions/[id]        # Delete promotion (owner/admin)        [DONE]
 
 # Calendar
-GET    /api/calendar               # Get promotions for date range         [TODO]
+GET    /api/calendar               # Get promotions for date range         [DONE]
 
 # Teams
-GET    /api/teams                  # List user's teams                     [TODO]
-POST   /api/teams                  # Create team                           [TODO]
+GET    /api/teams                  # List user's teams                     [DONE]
+POST   /api/teams                  # Create team (create_team_with_owner)  [DONE]
 POST   /api/teams/[id]/invite      # Invite member                         [TODO]
 
 # Channels & Products
-GET    /api/channels               # List channels                         [TODO]
-GET    /api/products               # List products                         [TODO]
+GET    /api/channels               # List channels (system + custom)       [DONE]
+POST   /api/channels               # Create custom channel                 [DONE]
+GET    /api/products               # List products (+channel prices)       [DONE]
+POST   /api/products               # Create product                        [DONE]
 
 # Webhooks
 POST   /api/webhooks/stripe        # Stripe payment webhooks               [Phase 2]

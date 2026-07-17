@@ -6,113 +6,58 @@ import { ArrowLeft, Loader2 } from 'lucide-react'
 import type { Promotion } from '@promohub/types'
 import { PromotionForm } from '@/components/promotions'
 
-// TODO: Get actual team ID from auth context/session
-const DEMO_TEAM_ID = '00000000-0000-0000-0000-000000000001'
-
-// Demo promotion data for development
-const DEMO_PROMOTIONS: Record<string, Promotion> = {
-  '1': {
-    id: '1',
-    teamId: DEMO_TEAM_ID,
-    channelId: 'oliveyoung',
-    title: '올리브영 2월 뷰티 페스타',
-    description: '2월 한 달간 진행되는 올리브영 뷰티 페스타 프로모션입니다.',
-    status: 'active',
-    discountType: 'percentage',
-    discountValue: '30%',
-    startDate: '2026-02-01',
-    endDate: '2026-02-14',
-    memo: '담당자: 김마케팅',
-    createdAt: '2026-01-15T09:00:00Z',
-    updatedAt: '2026-01-20T14:30:00Z',
-  },
-  '2': {
-    id: '2',
-    teamId: DEMO_TEAM_ID,
-    channelId: 'coupang',
-    title: '쿠팡 발렌타인 기획전',
-    description: '발렌타인 데이 기획전 참여',
-    status: 'planned',
-    discountType: 'coupon',
-    discountValue: '5,000원',
-    startDate: '2026-02-10',
-    endDate: '2026-02-14',
-    memo: '',
-    createdAt: '2026-01-20T10:00:00Z',
-    updatedAt: '2026-01-20T10:00:00Z',
-  },
-  '3': {
-    id: '3',
-    teamId: DEMO_TEAM_ID,
-    channelId: 'naver',
-    title: '네이버 브랜드 위크',
-    description: '네이버 쇼핑 브랜드 위크 참여',
-    status: 'planned',
-    discountType: 'bogo',
-    discountValue: '1+1',
-    startDate: '2026-02-15',
-    endDate: '2026-02-22',
-    memo: '선착순 500명',
-    createdAt: '2026-01-22T11:00:00Z',
-    updatedAt: '2026-01-22T11:00:00Z',
-  },
-}
-
 interface PageProps {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }
 
 export default function EditPromotionPage({ params }: PageProps) {
+  const promotionId = params.id
   const [promotion, setPromotion] = useState<Promotion | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [promotionId, setPromotionId] = useState<string | null>(null)
-
-  // Unwrap params promise
-  useEffect(() => {
-    params.then((p) => setPromotionId(p.id))
-  }, [params])
 
   // Fetch promotion data
   useEffect(() => {
-    if (!promotionId) return
+    let cancelled = false
 
     const fetchPromotion = async () => {
       setLoading(true)
       setError(null)
 
       try {
-        // Try to fetch from API first
         const response = await fetch(`/api/promotions/${promotionId}`)
+        const payload = await response.json().catch(() => ({}))
 
-        if (response.ok) {
-          const data = await response.json()
-          setPromotion(data)
-        } else if (response.status === 404) {
-          // Fall back to demo data for development
-          const demoPromotion = DEMO_PROMOTIONS[promotionId]
-          if (demoPromotion) {
-            setPromotion(demoPromotion)
-          } else {
-            setError('프로모션을 찾을 수 없습니다 (Promotion not found)')
-          }
-        } else {
-          throw new Error('Failed to fetch promotion')
+        if (!response.ok) {
+          throw new Error(
+            typeof payload.error === 'string'
+              ? payload.error
+              : '프로모션을 불러오는데 실패했습니다 (Failed to load promotion)'
+          )
         }
-      } catch {
-        // Fall back to demo data for development
-        const demoPromotion = DEMO_PROMOTIONS[promotionId]
-        if (demoPromotion) {
-          setPromotion(demoPromotion)
-        } else {
-          setError('프로모션을 불러오는데 실패했습니다 (Failed to load promotion)')
+
+        if (!cancelled) {
+          setPromotion(payload.data ?? null)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : '프로모션을 불러오는데 실패했습니다 (Failed to load promotion)'
+          )
         }
       } finally {
-        setLoading(false)
+        if (!cancelled) {
+          setLoading(false)
+        }
       }
     }
 
     fetchPromotion()
+    return () => {
+      cancelled = true
+    }
   }, [promotionId])
 
   if (loading) {

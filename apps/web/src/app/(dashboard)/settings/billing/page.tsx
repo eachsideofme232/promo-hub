@@ -13,7 +13,7 @@ const PLANS = [
       '기본 캘린더',
       '커뮤니티 지원',
     ],
-    current: false,
+    current: true,
   },
   {
     id: 'pro',
@@ -27,7 +27,7 @@ const PLANS = [
       '채널 연동 (5개)',
       '우선 지원',
     ],
-    current: true,
+    current: false,
     recommended: true,
   },
   {
@@ -71,12 +71,11 @@ export default function BillingSettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-primary-600 font-medium">현재 요금제</p>
-                <h2 className="text-2xl font-bold text-primary-900">Pro</h2>
-                <p className="text-sm text-primary-700 mt-1">다음 결제일: 2026년 3월 1일</p>
+                <h2 className="text-2xl font-bold text-primary-900">Free</h2>
+                <p className="text-sm text-primary-700 mt-1">
+                  Pro로 업그레이드하면 프로모션을 무제한으로 관리할 수 있습니다
+                </p>
               </div>
-              <button className="px-4 py-2 border border-primary-300 text-primary-700 rounded-lg hover:bg-primary-100 transition-colors">
-                결제 수단 관리
-              </button>
             </div>
           </div>
 
@@ -132,8 +131,10 @@ export default function BillingSettingsPage() {
             <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
               <CreditCard className="w-8 h-8 text-gray-400" />
               <div>
-                <p className="font-medium text-gray-900">•••• •••• •••• 4242</p>
-                <p className="text-sm text-gray-500">만료: 12/28</p>
+                <p className="font-medium text-gray-900">등록된 결제 수단이 없습니다</p>
+                <p className="text-sm text-gray-500">
+                  유료 결제는 준비 중입니다 (Toss Payments / Stripe 연동 예정)
+                </p>
               </div>
             </div>
           </div>
